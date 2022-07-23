@@ -1,0 +1,25 @@
+{
+	"ts-node": { "files": true, "swc": true },
+	"ts-node-dev": { "files": true },
+	"compilerOptions": {
+		"target": "es2020",
+		"allowJs": false,
+		"downlevelIteration": true,
+		"declaration": true,
+		"forceConsistentCasingInFileNames": true,
+		"noErrorTruncation": true,
+		"noUncheckedIndexedAccess": true,
+		"module": "commonjs",
+		"esModuleInterop": true,
+		"strict": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"rootDir": ".",
+		"outDir": "./dist",
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"incremental": true,
+		"sourceMap": true
+	},
+	"exclude": ["node_modules", "./dist"]
+}
