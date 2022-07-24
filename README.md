@@ -12,7 +12,7 @@ Channel mentions and links are clickable in the minecraft chat, When hovering ov
 
 # How to setup Minecraft-Chat-Bridge
 
-### Requirements
+## Requirements
 
 - [Git](https://git-scm.com/downloads)
 - [NodeJS 16 or higher](https://nodejs.org/en/download/)
@@ -20,11 +20,11 @@ Channel mentions and links are clickable in the minecraft chat, When hovering ov
 
 The minecraft server must have RCON enabled for this application to work, it uses RCON to send the discord chat messages to minecraft chat.
 
-### Install git
+## Install git
 
 [Download and install git for your OS](https://git-scm.com/download)
 
-### Install Minecraft-Chat-Bridge
+## Instal Minecraft-Chat-Bridge
 
 HTTPS
 
@@ -38,21 +38,45 @@ SSH
 git clone -b master git@github.com:VampireChicken12/Minecraft-Chat-Bridge.git
 ```
 
-### Create a .env file
+### Create `.env` file
 
-> **⚠** You may have to enable hidden file visibility in file explorer if you are on windows.
+> **⚠ WARNING**  
+> You may have to enable hidden file visibility in file explorer if you are on windows.
 
-Create a .env file from the .env-sample file:
+- Create a .env file from the .env-sample file:
 
 ```
-cp .env-sample .env
+   cp .env-sample .env
 ```
-
-Open `.env` with a text editor and fill out
-
-`TOKEN`, `PREFIX`, `STARTCOMMAND`, `RCON_HOST`, `RCON_PASSWORD`
 
 Remember that this file can't be hot-reloaded if you modify a value in the `.env` you must restart the application to apply changes
+
+### Creating a bot account
+
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications/) and click "New Application", type a name and click the "Create" button
+   ![Creating an application](https://img.hikari-bot.com/3VyEBBGaA.png)
+2. Go to the bot tab and click "Add bot" button and confirm by clicking "Yes, do it!", Ignore this step if you already have a bot on the application.
+   ![Creating a bot account](https://img.hikari-bot.com/yhgkcwIZW.png)
+3. Click the "Reset Token" button and confirm by clicking "Yes, do it!", Ignore this step if you already have your bot token.
+
+   - You maybe prompted to input a 2FA code when clicking "Yes, do it!" input your 2FA code then click the "Submit" button.
+     ![Resetting bot token](https://img.hikari-bot.com/FEhtMyysc.png)
+   - Enable message content intent then click "Copy" button **⚠ WARNING** You may only copy the token once. then click "Save Changes" button ![Coyping token](https://img.hikari-bot.com/sPYLfYEbD.png)
+
+4. Paste the token into the `.env` as the value of `TOKEN` property
+   - The token show here is invalid. Do not post your token publicly.
+     ![Filling token variable](https://img.hikari-bot.com/iF9ZAsAaK.png)
+
+### Filling in environment variables
+
+1. Type a prefix into the `.env` as the value of `PREFIX` property
+   ![Filling prefix variable](https://img.hikari-bot.com/ad6GD0mub.png)
+2. Put the command you use to listen to server logs in the `.env` as the value of `START_COMMAND` property. On windows I use PowerShell's Get-Content command to listen to the output of the latest.log file from the minecraft server logs directory. On linux you can use tail to do the same thing.
+   ![Filling starcommand variable](https://img.hikari-bot.com/bZ5OX99a3.png)
+3. Paste the channel ID into the `.env` as the value of `GAME_CHAT_CHANNEL` property
+   ![Filling gamechatchannel variables](https://img.hikari-bot.com/q8fAKTBrN.png)
+4. Update the value of the `RCON_PASSWORD` property to the actual RCON password from the server.properties file from the minecraft server folder.
+   ![Filling rcon password variable](https://img.hikari-bot.com/xAEcbAXW3.png)
 
 ## Start Minecraft-Chat-Bridge
 
