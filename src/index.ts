@@ -1,4 +1,4 @@
-import { Client, IntentsBitField, TextChannel, Webhook } from "discord.js";
+import { Client, IntentsBitField, Message, TextChannel, Webhook } from "discord.js";
 import dotenv from "dotenv";
 import { readFileSync, writeFile } from "fs";
 import jimp from "jimp";
@@ -178,61 +178,25 @@ client.on("ready", async (client) => {
 
 				if (message.author.bot || !message.content || message.channel.id !== GAME_CHAT_CHANNEL || ServerStopped) return;
 
-				var UserName = message.author.username;
+				const message_parts = splitToSubstrings(message.content, 1024);
 
-				if (message.member!.nickname) UserName = message.member!.nickname;
+				const tellraw_parts = parseMessageParts(message as Message, message_parts);
 
-				const tellraw_parts = [
-					JSON.parse(
-						`{"text":"[${UserName}] ", "color":  "#${decimalToHex(
-							message.member!.roles.highest.color
-						)}","hoverEvent":{"action":"show_text","contents":["${message.author.username}#${message.author.discriminator}\\nID: ${
-							message.author.id
-						}"]}}`
-					)
-				];
-
-				splitAndKeep(message.content, " ").map((part) => {
-					if (
-						(part.trim().includes("<@!") && part.trim().includes(">")) ||
-						(part.trim().includes("<@") && !part.trim().includes("<@&") && part.trim().includes(">"))
-					) {
-						const member = message.mentions.members!.get(part.trim().replace("<@!", "").replace(">", "").replace("<@", ""))!;
-
-						tellraw_parts.push({
-							text: "[" + (member.nickname !== null ? member.nickname : member.user.username) + "]",
-							color: "#" + decimalToHex(member.roles.highest.color),
-							hoverEvent: { action: "show_text", contents: [`${member.user.username}#${member.user.discriminator}\nID: ${member.user.id}`] }
-						});
-					} else if (part.trim().includes("<@&") && part.trim().includes(">")) {
-						const role = message.mentions.roles.find((role) => role.id === part.replace("<@&", "").replace(">", ""))!;
-						tellraw_parts.push({
-							text: "(" + role.name + ")",
-							color: "#" + decimalToHex(role.color),
-							hoverEvent: { action: "show_text", contents: [""] }
-						});
-					} else if (part.trim().includes("<#") && part.trim().includes(">")) {
-						const channel = message.mentions.channels.find((channel) => channel.id === part.replace("<#", "").replace(">", ""))! as TextChannel;
-						tellraw_parts.push({
-							text: channel.name,
-							color: "green",
-							hoverEvent: { action: "show_text", contents: ["Click me to open channel in discord"] },
-							clickEvent: { action: "open_url", value: `https://discord.com/channels/${channel.guildId}/${channel.id}` }
-						});
-					} else {
-						if (validURL(part)) {
-							tellraw_parts.push({
-								text: part,
-								color: "blue",
-								hoverEvent: { action: "show_text", contents: [""] },
-								clickEvent: { action: "open_url", value: part }
-							});
-						} else {
-							tellraw_parts.push({ text: part, color: "white", hoverEvent: { action: "show_text", contents: [""] } });
-						}
-					}
+				tellraw_parts.forEach(async (tellraw) => {
+					await rcon.send(`tellraw @a ${JSON.stringify(tellraw)}`);
 				});
-				await rcon.send(`tellraw @a ${JSON.stringify(tellraw_parts)}`);
+			});
+			client.on("messageUpdate", async (oldMessage, newMessage) => {
+				if (oldMessage.content === newMessage.content) return;
+				if (newMessage.partial) await newMessage.fetch();
+				if (newMessage.author?.bot || !newMessage.content || newMessage.channel.id !== GAME_CHAT_CHANNEL || ServerStopped) return;
+				const message_parts = splitToSubstrings(newMessage.content, 1024);
+
+				const tellraw_parts = parseMessageParts(newMessage as Message, message_parts);
+
+				tellraw_parts.forEach(async (tellraw) => {
+					await rcon.send(`tellraw @a ${JSON.stringify(tellraw)}`);
+				});
 			});
 			ptyProcess.on("data", function (data) {
 				var FilteredData = data.toString();
@@ -299,7 +263,66 @@ client.on("ready", async (client) => {
 		throw Error("Invalid Game Chat Channel ID provided");
 	}
 });
+function parseMessageParts(message: Message, messages: string[]) {
+	return messages.map((message_part) => {
+		let part_tellraw = [
+			JSON.parse(
+				`{"text":"[${message.member?.nickname ? message.member?.nickname : message.author?.username}] ", "color":  "#${decimalToHex(
+					message.member!.roles.highest.color
+				)}","hoverEvent":{"action":"show_text","contents":["${message.author?.username}#${message.author?.discriminator}\\nID: ${
+					message.author?.id
+				}"]}}`
+			)
+		];
+		splitAndKeep(message_part, " ").map((part) => {
+			if (/<@!?(\d{17,19})>/.test(part)) {
+				const member = message.mentions.members!.get(part.match(/<@!?(\d{17,19})>/)?.[1] ?? "")!;
+				if (!member) return;
+				part_tellraw.push({
+					text: "[" + (member.nickname !== null ? member.nickname : member.user.username) + "]",
+					color: "#" + decimalToHex(member.roles.highest.color),
+					hoverEvent: { action: "show_text", contents: [`${member.user.username}#${member.user.discriminator}\nID: ${member.user.id}`] }
+				});
+			} else if (/<@&(\d{17,19})>/.test(part)) {
+				const role = message.mentions.roles.find((role) => role.id === part.match(/<@&(\d{17,19})>/)![1])!;
+				part_tellraw.push({
+					text: "(" + role.name + ")",
+					color: "#" + decimalToHex(role.color),
+					hoverEvent: { action: "show_text", contents: [""] }
+				});
+			} else if (/<#(\d{17,19})>/.test(part)) {
+				const channel = message.mentions.channels.find((channel) => channel.id === part.match(/<#(\d{17,19})>/)![1])! as TextChannel;
+				part_tellraw.push({
+					text: channel.name,
+					color: "green",
+					hoverEvent: { action: "show_text", contents: ["Click me to open channel in discord"] },
+					clickEvent: { action: "open_url", value: `https://discord.com/channels/${channel.guildId}/${channel.id}` }
+				});
+			} else {
+				if (validURL(part)) {
+					part_tellraw.push({
+						text: part,
+						color: "blue",
+						hoverEvent: { action: "show_text", contents: ["Click me to open link in browser"] },
+						clickEvent: { action: "open_url", value: part }
+					});
+				} else {
+					part_tellraw.push({ text: part, color: "white", hoverEvent: { action: "show_text", contents: [""] } });
+				}
+			}
+		});
+		return part_tellraw;
+	});
+}
+function splitToSubstrings(str: string, n: number) {
+	const arr = [];
 
+	for (let index = 0; index < str.length; index += n) {
+		arr.push(str.slice(index, index + n));
+	}
+
+	return arr;
+}
 async function SendData(webhook: Webhook, FilteredData: string) {
 	if (FilteredData.includes("<")) {
 		let username = FilteredData.split(" ")[0]!.slice(1, -1);
