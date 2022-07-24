@@ -6,7 +6,7 @@ Advancement, goal and challenge announcements, Chat messages, Death messages.
 
 The following things are sent to minecraft chat from the configured Discord channel.
 
-Links, Role mentions, Member mentions, Channel mentions
+Chat messages, Links, Role mentions, Member mentions, Channel mentions
 
 Channel mentions and links are clickable in the minecraft chat, When hovering over name in square brackets the user's username and discriminator and ID will be shown
 
@@ -26,17 +26,16 @@ The minecraft server must have RCON enabled for this application to work, it use
 
 ## Instal Minecraft-Chat-Bridge
 
-HTTPS
+- HTTPS
 
-```
-git clone -b master https://github.com/VampireChicken12/Minecraft-Chat-Bridge.git
-```
+  ```
+  git clone -b master https://github.com/VampireChicken12/Minecraft-Chat-Bridge.git
+  ```
 
-SSH
-
-```
-git clone -b master git@github.com:VampireChicken12/Minecraft-Chat-Bridge.git
-```
+- SSH
+  ```
+  git clone -b master git@github.com:VampireChicken12/Minecraft-Chat-Bridge.git
+  ```
 
 ### Create `.env` file
 
@@ -45,11 +44,11 @@ git clone -b master git@github.com:VampireChicken12/Minecraft-Chat-Bridge.git
 
 - Create a .env file from the .env-sample file:
 
-```
-   cp .env-sample .env
-```
+  ```
+     cp .env-sample .env
+  ```
 
-Remember that this file can't be hot-reloaded if you modify a value in the `.env` you must restart the application to apply changes
+  Remember that this file can't be hot-reloaded if you modify a value in the `.env` you must restart the application to apply changes
 
 ### Creating a bot account
 
@@ -77,56 +76,53 @@ Remember that this file can't be hot-reloaded if you modify a value in the `.env
    ![Filling game chat channel variable](https://img.hikari-bot.com/n0Fa1rCVP.png)
 4. Update the value of the `RCON_PASSWORD` property to the actual RCON password from the server.properties file from the minecraft server folder.
    ![Filling rcon password variable](https://img.hikari-bot.com/RnZvPN80C.png)
-5. Select the server type that matches your server and put it as the value of `SERVER_TYPE` property.
-   ![Filling server type variable](https://img.hikari-bot.com/MYokZrws4.png)
+5. Select from the following options what matches your server and put it as the value of `SERVER_TYPE` property.
+   - `vanilla`, `spigot`, `paper`, `purpur`
+     ![Filling server type variable](https://img.hikari-bot.com/MYokZrws4.png)
 
 ## Start Minecraft-Chat-Bridge
 
-Install dependencies
+1. Install dependencies
 
-```
-npm i
-```
+   ```
+   npm i
+   ```
 
-Build
+2. Build the application
 
-```
-npm run build
-```
+   ```
+   npm run build
+   ```
 
-Start
-
-```
-npm run start
-```
+3. Start the application
+   ```
+   npm run start
+   ```
 
 ## Updating Minecraft-Chat-Bridge
 
 Open the applications folder in a terminal make sure you stopped the application if it is still running.
 
-Download the latest version
+1. Download the latest version
+   ```
+   git pull
+   ```
+2. Update dependencies
 
-```
-git pull
-```
+   ```
+   npm i
+   ```
 
-Update dependencies
+3. Rebuild the application
 
-```
-npm i
-```
+   ```
+   npm run build
+   ```
 
-Rebuild the application
-
-```
-npm run build
-```
-
-Start the application
-
-```
-npm run start
-```
+4. Start the application
+   ```
+   npm run start
+   ```
 
 ## Examples
 
