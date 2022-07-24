@@ -127,14 +127,14 @@ Open the applications folder in a terminal make sure you stopped the application
 ## Examples
 
 Member role color effects the color of the mention
-[![Example 1](https://img.hikari-bot.com/FjDwqCXrc.png)](https://img.hikari-bot.com/FjDwqCXrc.png)
+![Example 1](https://img.hikari-bot.com/cHeJMP5WT.png)
 Demo of link clickablity
-[![Example 2](https://img.hikari-bot.com/G8bzIhVuJ.png)](https://img.hikari-bot.com/G8bzIhVuJ.png)
-[![Example 3](https://img.hikari-bot.com/DfCLYv1QA.png)](https://img.hikari-bot.com/DfCLYv1QA.png)
+![Example 2](https://img.hikari-bot.com/GshmRaQMs.png)
+![Example 3](https://img.hikari-bot.com/CJ0NNM9ip.png)
 Demo of channel mention clickablity
-[![Example 4](https://img.hikari-bot.com/kkcKGZhXB.png)](https://img.hikari-bot.com/kkcKGZhXB.png)
+![Example 4](https://img.hikari-bot.com/Ka2bpFOrM.png)
 Discord chat name hover demo
-[![Example 5](https://img.hikari-bot.com/Yw35SUARi.png)](https://img.hikari-bot.com/Yw35SUARi.png)
+![Example 5](https://img.hikari-bot.com/Yoc8oVwuN.png)
 Nickname support demo
-[![Example 6](https://img.hikari-bot.com/kWb5Dr8tz.png)](https://img.hikari-bot.com/kWb5Dr8tz.png)
-[![Example 7](https://img.hikari-bot.com/c2VjtWRxA.png)](https://img.hikari-bot.com/c2VjtWRxA.png)
+![Example 6](https://img.hikari-bot.com/ahS8M6fmW.png)
+![Example 7](https://img.hikari-bot.com/ZTRcjyAfw.png)
