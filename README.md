@@ -127,14 +127,14 @@ Open the applications folder in a terminal make sure you stopped the application
 ## Examples
 
 Member role color effects the color of the mention
-![Example 1](https://img.hikari-bot.com/cHeJMP5WT.png)
+![Example 1](https://img.hikari-bot.com/cHeJMP5WT.png?v=1)
 Demo of link clickablity
-![Example 2](https://img.hikari-bot.com/GshmRaQMs.png)
-![Example 3](https://img.hikari-bot.com/CJ0NNM9ip.png)
+![Example 2](https://img.hikari-bot.com/GshmRaQMs.png?v=1)
+![Example 3](https://img.hikari-bot.com/CJ0NNM9ip.png?v=1)
 Demo of channel mention clickablity
-![Example 4](https://img.hikari-bot.com/Ka2bpFOrM.png)
+![Example 4](https://img.hikari-bot.com/Ka2bpFOrM.png?v=1)
 Discord chat name hover demo
-![Example 5](https://img.hikari-bot.com/Yoc8oVwuN.png)
+![Example 5](https://img.hikari-bot.com/Yoc8oVwuN.png?v=1)
 Nickname support demo
-![Example 6](https://img.hikari-bot.com/ahS8M6fmW.png)
-![Example 7](https://img.hikari-bot.com/ZTRcjyAfw.png)
+![Example 6](https://img.hikari-bot.com/ahS8M6fmW.png?v=1)
+![Example 7](https://img.hikari-bot.com/ZTRcjyAfw.png?v=1)
