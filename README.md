@@ -64,21 +64,21 @@ The minecraft server must have RCON enabled for this application to work, it use
 
 4. Paste the token into the `.env` as the value of `TOKEN` property
    - The token shown here is invalid. Do not post your token publicly.
-     ![Filling token variable](https://img.hikari-bot.com/jZu8UmZwn.png)
+     ![Filling token variable](https://img.hikari-bot.com/y0OVSPrKg.png)
 
 ### Filling in environment variables
 
 1. Type a prefix into the `.env` as the value of `PREFIX` property
-   ![Filling prefix variable](https://img.hikari-bot.com/3OFJtciXs.png)
+   ![Filling prefix variable](https://img.hikari-bot.com/4PwHtQvhm.png)
 2. Put the command you use to listen to server logs in the `.env` as the value of `START_COMMAND` property. On windows I use PowerShell's Get-Content command to listen to the output of the latest.log file from the minecraft server logs directory. On linux you can use tail to do the same thing.
-   ![Filling start command variable](https://img.hikari-bot.com/NP0drmbm6.png)
+   ![Filling start command variable](https://img.hikari-bot.com/Jr5bkueM3.png)
 3. Paste the channel ID into the `.env` as the value of `GAME_CHAT_CHANNEL` property
-   ![Filling game chat channel variable](https://img.hikari-bot.com/n0Fa1rCVP.png)
+   ![Filling game chat channel variable](https://img.hikari-bot.com/zadle6LrU.png)
 4. Update the value of the `RCON_PASSWORD` property to the actual RCON password from the server.properties file from the minecraft server folder.
-   ![Filling rcon password variable](https://img.hikari-bot.com/RnZvPN80C.png)
+   ![Filling rcon password variable](https://img.hikari-bot.com/HLMXU1t9C.png)
 5. Select from the following options what matches your server and put it as the value of `SERVER_TYPE` property.
    - `vanilla`, `spigot`, `paper`, `purpur`
-     ![Filling server type variable](https://img.hikari-bot.com/MYokZrws4.png)
+     ![Filling server type variable](https://img.hikari-bot.com/EjsNaCyoH.png)
 
 ## Start Minecraft-Discord-Chat-Bridge
 
