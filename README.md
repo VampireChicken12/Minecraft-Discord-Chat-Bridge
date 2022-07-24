@@ -1,6 +1,6 @@
-# Minecraft-Chat-Bridge
+# Minecraft-Discord-Chat-Bridge
 
-Minecraft-Chat-Bridge is an application that sends the following things to the configured Discord channel.
+Minecraft-Discord-Chat-Bridge is an application that sends the following things to the configured Discord channel.
 
 Advancement, goal and challenge announcements, Chat messages, Death messages.
 
@@ -10,7 +10,7 @@ Chat messages, Links, Role mentions, Member mentions, Channel mentions
 
 Channel mentions and links are clickable in the minecraft chat, When hovering over name in square brackets the user's username and discriminator and ID will be shown
 
-# How to setup Minecraft-Chat-Bridge
+# How to setup Minecraft-Discord-Chat-Bridge
 
 ## Requirements
 
@@ -24,17 +24,17 @@ The minecraft server must have RCON enabled for this application to work, it use
 
 [Download and install git for your OS](https://git-scm.com/download)
 
-## Instal Minecraft-Chat-Bridge
+## Instal Minecraft-Discord-Chat-Bridge
 
 - HTTPS
 
   ```
-  git clone -b master https://github.com/VampireChicken12/Minecraft-Chat-Bridge.git
+  git clone -b master https://github.com/VampireChicken12/Minecraft-Discord-Chat-Bridge.git
   ```
 
 - SSH
   ```
-  git clone -b master git@github.com:VampireChicken12/Minecraft-Chat-Bridge.git
+  git clone -b master git@github.com:VampireChicken12/Minecraft-Discord-Chat-Bridge.git
   ```
 
 ### Create `.env` file
@@ -80,7 +80,7 @@ The minecraft server must have RCON enabled for this application to work, it use
    - `vanilla`, `spigot`, `paper`, `purpur`
      ![Filling server type variable](https://img.hikari-bot.com/MYokZrws4.png)
 
-## Start Minecraft-Chat-Bridge
+## Start Minecraft-Discord-Chat-Bridge
 
 1. Install dependencies
 
@@ -99,7 +99,7 @@ The minecraft server must have RCON enabled for this application to work, it use
    npm run start
    ```
 
-## Updating Minecraft-Chat-Bridge
+## Updating Minecraft-Discord-Chat-Bridge
 
 Open the applications folder in a terminal make sure you stopped the application if it is still running.
 
