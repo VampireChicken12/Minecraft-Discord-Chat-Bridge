@@ -23,8 +23,8 @@ const client = new Client({
 dotenv.config();
 let ServerStopped = false;
 let SavedChunks = 0;
-const { TOKEN, GAMECHATCHANNEL, STARTCOMMAND, PREFIX, RCON_HOST, RCON_PASSWORD } = process.env;
-const undefinedEnvVariables = Object.entries({ TOKEN, GAMECHATCHANNEL, STARTCOMMAND, PREFIX, RCON_HOST, RCON_PASSWORD }).filter(
+const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD } = process.env;
+const undefinedEnvVariables = Object.entries({ TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD }).filter(
 	([key, value]) => !value
 );
 
@@ -42,12 +42,12 @@ const ptyProcess = spawn(shell, [], {
 	rows: 40,
 	cwd: process.cwd()
 });
-ptyProcess.write(`${STARTCOMMAND}\r`);
+ptyProcess.write(`${START_COMMAND}\r`);
 client.on("ready", async (client) => {
 	logger.info(`Logged in as ${client.user.tag}`);
-	const gameChannelExists = client.channels.cache.has(GAMECHATCHANNEL!);
+	const gameChannelExists = client.channels.cache.has(GAME_CHAT_CHANNEL!);
 	if (gameChannelExists) {
-		const gameChannel = client.channels.cache.find((channel) => channel.id === GAMECHATCHANNEL)! as TextChannel;
+		const gameChannel = client.channels.cache.find((channel) => channel.id === GAME_CHAT_CHANNEL)! as TextChannel;
 
 		const webhooks = await gameChannel.fetchWebhooks();
 		if (webhooks.size === 0) {
@@ -57,17 +57,17 @@ client.on("ready", async (client) => {
 		if (webhook) {
 			const rcon = await Rcon.connect({ host: RCON_HOST!, password: RCON_PASSWORD! });
 			client.on("messageCreate", async (message) => {
-				if (!GAMECHATCHANNEL) {
+				if (!GAME_CHAT_CHANNEL) {
 					if (message.author.bot || !message.content || !message.content.startsWith(PREFIX!)) return;
 					const args = message.content.slice(PREFIX!.length).trim().split(/ +/);
 					const command = args.shift()!.toLowerCase();
 					if (command === "setchannel") {
 						const fileName = "./.env";
 						const file = readFileSync(fileName).toString();
-						if (file.match(/GAMECHATCHANNEL=\d{17,19}/gi)) {
+						if (file.match(/GAME_CHAT_CHANNEL=\d{17,19}/gi)) {
 							file.replace(
-								/GAMECHATCHANNEL=\d{17,19}/gi,
-								`GAMECHATCHANNEL=${message.mentions.channels.first() ? message.mentions.channels.first()!.id : args[0]}`
+								/GAME_CHAT_CHANNEL=\d{17,19}/gi,
+								`GAME_CHAT_CHANNEL=${message.mentions.channels.first() ? message.mentions.channels.first()!.id : args[0]}`
 							);
 						}
 						writeFile(fileName, file, function (err) {
@@ -91,10 +91,10 @@ client.on("ready", async (client) => {
 						if (command === "setchannel") {
 							const fileName = "./.env";
 							const file = readFileSync(fileName).toString();
-							if (file.match(/GAMECHATCHANNEL=\d{17,19}/gi)) {
+							if (file.match(/GAME_CHAT_CHANNEL=\d{17,19}/gi)) {
 								file.replace(
-									/GAMECHATCHANNEL=\d{17,19}/gi,
-									`GAMECHATCHANNEL=${message.mentions.channels.first() ? message.mentions.channels.first()!.id : args[0]}`
+									/GAME_CHAT_CHANNEL=\d{17,19}/gi,
+									`GAME_CHAT_CHANNEL=${message.mentions.channels.first() ? message.mentions.channels.first()!.id : args[0]}`
 								);
 							}
 							writeFile(fileName, file, function (err) {
@@ -113,7 +113,7 @@ client.on("ready", async (client) => {
 						}
 					}
 
-					if (message.author.bot || !message.content || message.channel.id != GAMECHATCHANNEL || ServerStopped) return;
+					if (message.author.bot || !message.content || message.channel.id != GAME_CHAT_CHANNEL || ServerStopped) return;
 
 					var UserName = message.author.username;
 
