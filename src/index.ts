@@ -21,19 +21,103 @@ const client = new Client({
 	]
 });
 dotenv.config();
-let ServerStopped = false;
-let SavedChunks = 0;
-const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD } = process.env;
-const undefinedEnvVariables = Object.entries({ TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD }).filter(
-	([key, value]) => !value
-);
+interface ENV {
+	TOKEN: string | undefined;
+	GAME_CHAT_CHANNEL: string | undefined;
+	START_COMMAND: string | undefined;
+	PREFIX: string | undefined;
+	RCON_HOST: string | undefined;
+	RCON_PASSWORD: string | undefined;
+	SERVER_TYPE: string | undefined;
+}
+interface Config {
+	TOKEN: string;
+	GAME_CHAT_CHANNEL: string;
+	START_COMMAND: string;
+	PREFIX: string;
+	RCON_HOST: string;
+	RCON_PASSWORD: string;
+	SERVER_TYPE: ServerTypes;
+}
+const getEnv = (): ENV => {
+	return {
+		TOKEN: process.env.TOKEN,
+		GAME_CHAT_CHANNEL: process.env.GAME_CHAT_CHANNEL,
+		START_COMMAND: process.env.START_COMMAND,
+		PREFIX: process.env.PREFIX,
+		RCON_HOST: process.env.RCON_HOST,
+		RCON_PASSWORD: process.env.RCON_PASSWORD,
+		SERVER_TYPE: process.env.SERVER_TYPE
+	};
+};
+const getSanitizedEnv = (env: ENV) => {
+	for (const [key, value] of Object.entries(env)) {
+		if (value === undefined) {
+			throw new Error(`${key} is a required environment variable that is missing.`);
+		}
+	}
+	return env as Config;
+};
+const config = getEnv();
 
-if (undefinedEnvVariables.length > 0) {
-	logger.error(undefinedEnvVariables.map(([key, value]) => `${key} is a required environment variable that is missing.`).join("\n"));
+const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD, SERVER_TYPE } = getSanitizedEnv(config);
+let ServerStopped = false;
+
+if (!["paper", "spigot", "vanilla", "purpur"].includes(SERVER_TYPE)) {
+	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper' , 'spigot' ,'vanilla'`);
 	process.exit();
 }
-const InfoLength = "[22:34:10] [Server thread/INFO]: ".length;
 
+function getInfoLength(server_type: ServerTypes) {
+	switch (server_type) {
+		case "spigot": {
+			return {
+				chat_regex: /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i,
+				info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+				join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
+				leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
+				goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
+				challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
+				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
+			};
+		}
+		case "vanilla": {
+			return {
+				chat_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+				info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+				join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
+				leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
+				goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
+				challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
+				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
+			};
+		}
+		case "paper": {
+			return {
+				chat_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+				info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+				join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
+				leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
+				goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
+				challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
+				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
+			};
+		}
+		case "purpur": {
+			return {
+				chat_regex: /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i,
+				info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+				join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
+				leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
+				goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
+				challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
+				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
+			};
+		}
+	}
+}
+type ServerTypes = "paper" | "spigot" | "vanilla" | "purpur";
+const InfoLengthRegexes = getInfoLength(SERVER_TYPE);
 const shell = process.platform === "win32" ? "powershell.exe" : "bash";
 
 const ptyProcess = spawn(shell, [], {
@@ -43,9 +127,10 @@ const ptyProcess = spawn(shell, [], {
 	cwd: process.cwd()
 });
 ptyProcess.write(`${START_COMMAND}\r`);
+
 client.on("ready", async (client) => {
 	logger.info(`Logged in as ${client.user.tag}`);
-	const gameChannelExists = client.channels.cache.has(GAME_CHAT_CHANNEL!);
+	const gameChannelExists = client.channels.cache.has(GAME_CHAT_CHANNEL);
 	if (gameChannelExists) {
 		const gameChannel = client.channels.cache.find((channel) => channel.id === GAME_CHAT_CHANNEL)! as TextChannel;
 
@@ -55,143 +140,129 @@ client.on("ready", async (client) => {
 		}
 		const webhook = webhooks.find((webhook) => webhook.name === "Minecraft Chat Webhook");
 		if (webhook) {
-			const rcon = await Rcon.connect({ host: RCON_HOST!, password: RCON_PASSWORD! });
+			const rcon = await Rcon.connect({ host: RCON_HOST, password: RCON_PASSWORD });
 			client.on("messageCreate", async (message) => {
-				if (!GAME_CHAT_CHANNEL) {
-					if (message.author.bot || !message.content || !message.content.startsWith(PREFIX!)) return;
-					const args = message.content.slice(PREFIX!.length).trim().split(/ +/);
+				if (message.author.bot || !message.content || message.content.startsWith(PREFIX)) {
+					const args = message.content.slice(PREFIX.length).trim().split(/ +/);
 					const command = args.shift()!.toLowerCase();
 					if (command === "setchannel") {
 						const fileName = "./.env";
 						const file = readFileSync(fileName).toString();
 						if (file.match(/GAME_CHAT_CHANNEL=\d{17,19}/gi)) {
-							file.replace(
-								/GAME_CHAT_CHANNEL=\d{17,19}/gi,
-								`GAME_CHAT_CHANNEL=${message.mentions.channels.first() ? message.mentions.channels.first()!.id : args[0]}`
-							);
-						}
-						writeFile(fileName, file, function (err) {
-							if (err) return console.log(err);
-							logger.log("Written to " + fileName);
-						});
-						return message.channel
-							.send(
-								`Chat channel set to ${
-									message.mentions.channels.first() ? message.mentions.channels.first() : "<#" + args[0] + ">"
-								}\nRestarting bot and server to apply change.`
-							)
-							.then(() => {
-								process.exit();
-							});
-					}
-				} else {
-					if (message.author.bot || !message.content || message.content.startsWith(PREFIX!)) {
-						const args = message.content.slice(PREFIX!.length).trim().split(/ +/);
-						const command = args.shift()!.toLowerCase();
-						if (command === "setchannel") {
-							const fileName = "./.env";
-							const file = readFileSync(fileName).toString();
-							if (file.match(/GAME_CHAT_CHANNEL=\d{17,19}/gi)) {
+							writeFile(
+								fileName,
 								file.replace(
 									/GAME_CHAT_CHANNEL=\d{17,19}/gi,
 									`GAME_CHAT_CHANNEL=${message.mentions.channels.first() ? message.mentions.channels.first()!.id : args[0]}`
-								);
-							}
-							writeFile(fileName, file, function (err) {
-								if (err) return console.log(err);
-								logger.log("Written to " + fileName);
-							});
-							return message.channel
-								.send(
-									`Chat channel set to ${
-										message.mentions.channels.first() ? message.mentions.channels.first() : "<#" + args[0] + ">"
-									}\nRestarting bot and server to apply change.`
-								)
-								.then(() => {
-									process.exit();
-								});
+								),
+								function (err) {
+									if (err) {
+										message.channel.send("I ran into an error when setting the chat channel");
+										return console.log(err);
+									}
+									logger.log("Written to " + fileName);
+									return message.channel
+										.send(
+											`Chat channel set to ${
+												message.mentions.channels.first() ? message.mentions.channels.first() : "<#" + args[0] + ">"
+											}\nRestarting bot and server to apply change.`
+										)
+										.then(() => {
+											process.exit();
+										});
+								}
+							);
 						}
 					}
+				}
 
-					if (message.author.bot || !message.content || message.channel.id != GAME_CHAT_CHANNEL || ServerStopped) return;
+				if (message.author.bot || !message.content || message.channel.id !== GAME_CHAT_CHANNEL || ServerStopped) return;
 
-					var UserName = message.author.username;
+				var UserName = message.author.username;
 
-					if (message.member!.nickname) UserName = message.member!.nickname;
+				if (message.member!.nickname) UserName = message.member!.nickname;
 
-					const tellraw_parts = [
-						JSON.parse(
-							`{"text":"[${UserName}] ", "color":  "#${decimalToHex(
-								message.member!.roles.highest.color
-							)}","hoverEvent":{"action":"show_text","contents":["${message.author.username}#${message.author.discriminator}\\nID: ${
-								message.author.id
-							}"]}}`
-						)
-					];
+				const tellraw_parts = [
+					JSON.parse(
+						`{"text":"[${UserName}] ", "color":  "#${decimalToHex(
+							message.member!.roles.highest.color
+						)}","hoverEvent":{"action":"show_text","contents":["${message.author.username}#${message.author.discriminator}\\nID: ${
+							message.author.id
+						}"]}}`
+					)
+				];
 
-					var MessageText = `${message.content}`;
-					splitAndKeep(MessageText, " ").map((part) => {
-						if (
-							(part.trim().includes("<@!") && part.trim().includes(">")) ||
-							(part.trim().includes("<@") && !part.trim().includes("<@&") && part.trim().includes(">"))
-						) {
-							const member = message.mentions.members!.get(part.trim().replace("<@!", "").replace(">", "").replace("<@", ""))!;
+				splitAndKeep(message.content, " ").map((part) => {
+					if (
+						(part.trim().includes("<@!") && part.trim().includes(">")) ||
+						(part.trim().includes("<@") && !part.trim().includes("<@&") && part.trim().includes(">"))
+					) {
+						const member = message.mentions.members!.get(part.trim().replace("<@!", "").replace(">", "").replace("<@", ""))!;
 
+						tellraw_parts.push({
+							text: "[" + (member.nickname !== null ? member.nickname : member.user.username) + "]",
+							color: "#" + decimalToHex(member.roles.highest.color),
+							hoverEvent: { action: "show_text", contents: [`${member.user.username}#${member.user.discriminator}\nID: ${member.user.id}`] }
+						});
+					} else if (part.trim().includes("<@&") && part.trim().includes(">")) {
+						const role = message.mentions.roles.find((role) => role.id === part.replace("<@&", "").replace(">", ""))!;
+						tellraw_parts.push({
+							text: "(" + role.name + ")",
+							color: "#" + decimalToHex(role.color),
+							hoverEvent: { action: "show_text", contents: [""] }
+						});
+					} else if (part.trim().includes("<#") && part.trim().includes(">")) {
+						const channel = message.mentions.channels.find((channel) => channel.id === part.replace("<#", "").replace(">", ""))! as TextChannel;
+						tellraw_parts.push({
+							text: channel.name,
+							color: "green",
+							hoverEvent: { action: "show_text", contents: ["Click me to open channel in discord"] },
+							clickEvent: { action: "open_url", value: `https://discord.com/channels/${channel.guildId}/${channel.id}` }
+						});
+					} else {
+						if (validURL(part)) {
 							tellraw_parts.push({
-								text: "[" + (member.nickname !== null ? member.nickname : member.user.username) + "]",
-								color: "#" + decimalToHex(member.roles.highest.color),
-								hoverEvent: { action: "show_text", contents: [`${member.user.username}#${member.user.discriminator}\nID: ${member.user.id}`] }
-							});
-						} else if (part.trim().includes("<@&") && part.trim().includes(">")) {
-							const role = message.mentions.roles.find((role) => role.id === part.replace("<@&", "").replace(">", ""))!;
-							tellraw_parts.push({
-								text: "(" + role.name + ")",
-								color: "#" + decimalToHex(role.color),
-								hoverEvent: { action: "show_text", contents: [""] }
-							});
-						} else if (part.trim().includes("<#") && part.trim().includes(">")) {
-							const channel = message.mentions.channels.find((channel) => channel.id === part.replace("<#", "").replace(">", ""))! as TextChannel;
-							tellraw_parts.push({
-								text: channel.name,
-								color: "green",
-								hoverEvent: { action: "show_text", contents: ["Click me to open channel in discord"] },
-								clickEvent: { action: "open_url", value: `https://discord.com/channels/${channel.guildId}/${channel.id}` }
+								text: part,
+								color: "blue",
+								hoverEvent: { action: "show_text", contents: [""] },
+								clickEvent: { action: "open_url", value: part }
 							});
 						} else {
-							if (validURL(part)) {
-								tellraw_parts.push({
-									text: part,
-									color: "blue",
-									hoverEvent: { action: "show_text", contents: [""] },
-									clickEvent: { action: "open_url", value: part }
-								});
-							} else {
-								tellraw_parts.push({ text: part, color: "white", hoverEvent: { action: "show_text", contents: [""] } });
-							}
+							tellraw_parts.push({ text: part, color: "white", hoverEvent: { action: "show_text", contents: [""] } });
 						}
-					});
-					await rcon.send(`tellraw @a ${JSON.stringify(tellraw_parts)}`);
-				}
+					}
+				});
+				await rcon.send(`tellraw @a ${JSON.stringify(tellraw_parts)}`);
 			});
 			ptyProcess.on("data", function (data) {
 				var FilteredData = data.toString();
-				process.stdout.write(data);
-				if (FilteredData.slice(InfoLength).charAt(0) == "<" && FilteredData.includes(">")) {
+				const DataType = InfoLengthRegexes.chat_regex.test(FilteredData) ? "chat" : InfoLengthRegexes.info_regex.test(FilteredData) ? "info" : null;
+				if (DataType === null) {
+					return;
+				}
+				const DataInfoLength =
+					(DataType === "chat"
+						? FilteredData.match(InfoLengthRegexes.chat_regex)?.[0]!.length
+						: FilteredData.match(InfoLengthRegexes.info_regex)?.[0]!.length) ?? 0;
+
+				if (FilteredData.slice(DataInfoLength).charAt(0) == "<" && FilteredData.includes(">")) {
 					FilteredData = FilteredData.split("\n").join(" ");
-					FilteredData = FilteredData.slice(InfoLength);
+					FilteredData = FilteredData.slice(DataInfoLength);
 
 					SendData(webhook, FilteredData);
 					return;
 				}
-				if (FilteredData.match(/\[Server thread\/INFO\]: (.*) joined the game/gi) && !FilteredData.includes("tellraw")) {
+				if (InfoLengthRegexes.join_regex.test(FilteredData) && !FilteredData.includes("tellraw")) {
 					FilteredData = FilteredData.split("\n").join(" ");
-					SendData(webhook, FilteredData.match(/\[Server thread\/INFO\]: (.* joined the game)/gi)![0]!.replace("[Server thread/INFO]: ", ""));
+					FilteredData = FilteredData.match(InfoLengthRegexes.join_regex)?.[1] ?? FilteredData;
+					SendData(webhook, FilteredData);
 					return;
 				}
 
-				if (FilteredData.match(/\[Server thread\/INFO\]: (.*) left the game/gi) && !FilteredData.includes("tellraw")) {
+				if (InfoLengthRegexes.leave_regex.test(FilteredData) && !FilteredData.includes("tellraw")) {
 					FilteredData = FilteredData.split("\n").join(" ");
-					SendData(webhook, FilteredData.match(/\[Server thread\/INFO\]: (.*) left the game/gi)![0]!.replace("[Server thread/INFO]: ", ""));
+					FilteredData = FilteredData.match(InfoLengthRegexes.leave_regex)?.[1] ?? FilteredData;
+					SendData(webhook, FilteredData);
 					return;
 				}
 
@@ -200,82 +271,32 @@ client.on("ready", async (client) => {
 					SendData(webhook, "The server is stopping");
 					return;
 				}
-				if (
-					FilteredData.match(/\[Server thread\/INFO\]: (.* has reached the goal \[.*\])/gi) &&
-					!FilteredData.includes("<") &&
-					!FilteredData.includes("tellraw")
-				) {
-					SendData(
-						webhook,
-						"<" +
-							FilteredData.match(/\[Server thread\/INFO\]: (.* has reached the goal \[.*\])/gi)![0]
-								?.replace("[Server thread/INFO]: ", "")
-								.replace("[", "**")
-								.replace("]", "**")
-					);
+				if (InfoLengthRegexes.goal_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
+					SendData(webhook, "<" + FilteredData.match(InfoLengthRegexes.goal_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
-				if (
-					FilteredData.match(/\[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/gi) &&
-					!FilteredData.includes("<") &&
-					!FilteredData.includes("tellraw")
-				) {
-					SendData(
-						webhook,
-						"<" +
-							FilteredData.match(/\[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/gi)![0]
-								?.replace("[Server thread/INFO]: ", "")
-								.replace("[", "**")
-								.replace("]", "**")
-					);
+				if (InfoLengthRegexes.challenge_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
+					SendData(webhook, "<" + FilteredData.match(InfoLengthRegexes.challenge_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
-				if (
-					FilteredData.match(/\[Server thread\/INFO\]: (.* has made the advancement \[.*\])/gi) &&
-					!FilteredData.includes("<") &&
-					!FilteredData.includes("tellraw")
-				) {
-					SendData(
-						webhook,
-						"<" +
-							FilteredData.match(/\[Server thread\/INFO\]: (.* has made the advancement \[.*\])/gi)![0]
-								?.replace("[Server thread/INFO]: ", "")
-								.replace("[", "**")
-								.replace("]", "**")
-					);
+				if (InfoLengthRegexes.advancement_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
+					SendData(webhook, "<" + FilteredData.match(InfoLengthRegexes.advancement_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
 				for (const regex of regexes) {
 					if (regex.test(FilteredData)) {
-						SendData(
-							webhook,
-							"<" +
-								FilteredData.trim()
-									.match(regex)![0]!
-									.substring(InfoLength - "[18:36:49] ".length)!
-									.split(/ +/)[0] +
-								"> " +
-								FilteredData.trim()
-									.match(regex)![0]!
-									.substring(InfoLength - "[18:36:49] ".length)!
-									.replace(
-										FilteredData.trim()
-											.match(regex)![0]!
-											.substring(InfoLength - "[18:36:49] ".length)!
-											.split(/ +/)[0]!,
-										""
-									)
-						);
+						FilteredData = FilteredData.split("\r\n").join("");
+						SendData(webhook, "<" + FilteredData.match(regex)![2] + "> " + FilteredData.match(regex)![3]);
 						break;
 					}
 				}
-				if (ServerStopped && FilteredData.includes("): All chunks are saved")) {
-					SavedChunks++;
-
-					if (SavedChunks == 6) setTimeout(() => process.exit(), 2000);
+				if (ServerStopped && FilteredData.includes("All dimensions are saved")) {
+					setTimeout(() => process.exit(), 2000);
 				}
 			});
 		}
+	} else {
+		throw Error("Invalid Game Chat Channel ID provided");
 	}
 });
 

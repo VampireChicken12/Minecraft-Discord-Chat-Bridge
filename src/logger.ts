@@ -21,10 +21,10 @@ export type LogTypes = "log" | "info" | "warn" | "error" | "dir" | "trace" | "de
  * Yay logging!
  */
 export default class Logger {
-	_debug?: boolean;
-	_reportError?: (...args: any[]) => void;
-	_types: { [LogType in LogTypes]: LogObject };
-	logStream?: WriteStream;
+	private _debug?: boolean;
+	private _reportError?: (...args: any[]) => void;
+	private _types: { [LogType in LogTypes]: LogObject };
+	private logStream?: WriteStream;
 	/**
 	 * Constructor for Logger
 	 * @param {String}   [logFile='log.txt'] The file to log to
@@ -142,7 +142,7 @@ export default class Logger {
 	 * @param {String}   type    The type of thing to log
 	 * @param {String[]} message The message(s) to log. Util.format is called on this
 	 */
-	_log(date: Date, type: LogTypes, ...message: string[]) {
+	private _log(date: Date, type: LogTypes, ...message: string[]) {
 		const time = `${this._padLeft(date.getMonth() + 1 + "", 2, 0 + "")}/${this._padLeft(date.getDate() + "", 2, 0 + "")} ${this._padLeft(
 			date.getHours() + "",
 			2,
@@ -165,7 +165,7 @@ export default class Logger {
 	 * @param {String} [padChar=' '] Char to pad with
 	 * @return {String} The padded string
 	 */
-	_padRight(msg: string, pad: number, padChar: string = " "): string {
+	private _padRight(msg: string, pad: number, padChar: string = " "): string {
 		padChar = `${padChar}`;
 		return new Array(pad)
 			.fill(0)
@@ -181,7 +181,7 @@ export default class Logger {
 	 * @param {String} [padChar='0'] Char to pad with
 	 * @return {String} The padded string
 	 */
-	_padLeft(msg: string, pad: number, padChar: string = "0"): string {
+	private _padLeft(msg: string, pad: number, padChar: string = "0"): string {
 		padChar = `${padChar}`; // because string coersion wee
 		msg = `${msg}`;
 		const padded = padChar.repeat(pad);
