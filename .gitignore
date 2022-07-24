@@ -2,3 +2,4 @@ dist/
 server/
 node_modules/
 .env
+./src/logs/
