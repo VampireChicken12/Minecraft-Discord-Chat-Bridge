@@ -64,7 +64,7 @@ Remember that this file can't be hot-reloaded if you modify a value in the `.env
    - Enable message content intent then click "Copy" button **⚠ WARNING** You may only copy the token once. then click "Save Changes" button ![Coyping token](https://img.hikari-bot.com/sPYLfYEbD.png)
 
 4. Paste the token into the `.env` as the value of `TOKEN` property
-   - The token show here is invalid. Do not post your token publicly.
+   - The token shown here is invalid. Do not post your token publicly.
      ![Filling token variable](https://img.hikari-bot.com/iF9ZAsAaK.png)
 
 ### Filling in environment variables
