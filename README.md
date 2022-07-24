@@ -65,18 +65,18 @@ Remember that this file can't be hot-reloaded if you modify a value in the `.env
 
 4. Paste the token into the `.env` as the value of `TOKEN` property
    - The token shown here is invalid. Do not post your token publicly.
-     ![Filling token variable](https://img.hikari-bot.com/iF9ZAsAaK.png)
+     ![Filling token variable](https://img.hikari-bot.com/xEYym8hJa.png)
 
 ### Filling in environment variables
 
 1. Type a prefix into the `.env` as the value of `PREFIX` property
-   ![Filling prefix variable](https://img.hikari-bot.com/ad6GD0mub.png)
+   ![Filling prefix variable](https://img.hikari-bot.com/alZv7ep96.png)
 2. Put the command you use to listen to server logs in the `.env` as the value of `START_COMMAND` property. On windows I use PowerShell's Get-Content command to listen to the output of the latest.log file from the minecraft server logs directory. On linux you can use tail to do the same thing.
-   ![Filling starcommand variable](https://img.hikari-bot.com/bZ5OX99a3.png)
+   ![Filling start command variable](https://img.hikari-bot.com/cinGJScax.png)
 3. Paste the channel ID into the `.env` as the value of `GAME_CHAT_CHANNEL` property
-   ![Filling gamechatchannel variables](https://img.hikari-bot.com/q8fAKTBrN.png)
+   ![Filling game chat channel variable](https://img.hikari-bot.com/dtrGvPkui.png)
 4. Update the value of the `RCON_PASSWORD` property to the actual RCON password from the server.properties file from the minecraft server folder.
-   ![Filling rcon password variable](https://img.hikari-bot.com/xAEcbAXW3.png)
+   ![Filling rcon password variable](https://img.hikari-bot.com/IERNkgSnW.png)
 
 ## Start Minecraft-Chat-Bridge
 
