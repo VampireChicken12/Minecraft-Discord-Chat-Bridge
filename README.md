@@ -12,7 +12,7 @@ Channel mentions and links are clickable in the minecraft chat, When hovering ov
 
 # How to setup Minecraft-Chat-Bridge
 
-## Requirements
+### Requirements
 
 - [Git](https://git-scm.com/downloads)
 - [NodeJS 16 or higher](https://nodejs.org/en/download/)
@@ -20,11 +20,11 @@ Channel mentions and links are clickable in the minecraft chat, When hovering ov
 
 The minecraft server must have RCON enabled for this application to work, it uses RCON to send the discord chat messages to minecraft chat.
 
-## Install git
+### Install git
 
 [Download and install git for your OS](https://git-scm.com/download)
 
-## Instal Minecraft-Chat-Bridge
+### Install Minecraft-Chat-Bridge
 
 HTTPS
 
@@ -38,10 +38,9 @@ SSH
 git clone -b master git@github.com:VampireChicken12/Minecraft-Chat-Bridge.git
 ```
 
-## Create a .env file
+### Create a .env file
 
-> **⚠ WARNING**  
-> You may have to enable hidden file visibility in file explorer if you are on windows.
+> **⚠** You may have to enable hidden file visibility in file explorer if you are on windows.
 
 Create a .env file from the .env-sample file:
 
