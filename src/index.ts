@@ -217,14 +217,16 @@ client.on("ready", async (client) => {
 
 				if (FilteredData.slice(DataInfoLength).charAt(0) == "<" && FilteredData.includes(">")) {
 					FilteredData = FilteredData.split("\n").join(" ");
-					FilteredData = /\[.*\]/.test(FilteredData.slice(DataInfoLength))
-						? FilteredData.slice(DataInfoLength)
+					FilteredData = /^<\[.*\]/.test(FilteredData.slice(DataInfoLength))
+						? "<" +
+						  (FilteredData.slice(DataInfoLength)
 								.replace(/<|>/g, "")
 								.slice(
 									FilteredData.slice(DataInfoLength)
 										.replace(/<|>/g, "")
 										.match(/^\[.*\]/)?.[0]?.length ?? 0
-								) ?? ""
+								) ?? "") +
+						  ">"
 						: FilteredData.slice(DataInfoLength);
 
 					SendData(webhook, FilteredData);
