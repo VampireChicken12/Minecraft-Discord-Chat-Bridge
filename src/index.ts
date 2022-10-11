@@ -363,14 +363,17 @@ function splitToSubstrings(str: string, splitCharacter: string, length: number) 
 async function SendData(webhook: Webhook, FilteredData: string) {
 	if (FilteredData.includes("<")) {
 		let username = FilteredData.split(" ")[0]!.slice(1, -1);
-		const embed = new EmbedBuilder().setThumbnail((await GetPlayerIcon(webhook, username))!).setDescription(FilteredData.slice(username.length + 2));
+		const embed = new EmbedBuilder()
+			.setThumbnail((await GetPlayerIcon(webhook, username))!)
+			.setAuthor({ name: username })
+			.setDescription(FilteredData.slice(username.length + 2));
 		webhook.send({
 			embeds: [embed],
 			username: username,
 			avatarURL: client.user!.avatarURL()!
 		});
 	} else {
-		const embed = new EmbedBuilder().setThumbnail(client.user!.avatarURL()!).setDescription(FilteredData);
+		const embed = new EmbedBuilder().setAuthor({ name: "Server" }).setThumbnail(client.user!.avatarURL()!).setDescription(FilteredData);
 		webhook.send({
 			embeds: [embed],
 			username: "Server",
