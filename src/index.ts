@@ -64,7 +64,7 @@ const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWOR
 let ServerStopped = false;
 
 if (!["paper", "spigot", "vanilla", "purpur"].includes(SERVER_TYPE)) {
-	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper' , 'spigot' ,'vanilla'`);
+	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper' , 'spigot' ,'vanilla', 'purpur'`);
 	process.exit();
 }
 
@@ -117,7 +117,7 @@ function getInfoLength(server_type: ServerTypes) {
 	}
 }
 type ServerTypes = "paper" | "spigot" | "vanilla" | "purpur";
-const InfoLengthRegexes = getInfoLength(SERVER_TYPE);
+const InfoLengthRegExps = getInfoLength(SERVER_TYPE);
 const shell = process.platform === "win32" ? "powershell.exe" : "bash";
 
 const ptyProcess = spawn(shell, [], {
@@ -136,11 +136,17 @@ client.on("ready", async (client) => {
 
 		const webhooks = await gameChannel.fetchWebhooks();
 		if (webhooks.size === 0) {
-			gameChannel.createWebhook({ name: "Minecraft Chat Webhook", avatar: client.user.displayAvatarURL({ size: 2048 }) });
+			gameChannel.createWebhook({
+				name: "Minecraft Chat Webhook",
+				avatar: client.user.displayAvatarURL({ size: 2048 })
+			});
 		}
 		const webhook = webhooks.find((webhook) => webhook.name === "Minecraft Chat Webhook");
 		if (webhook) {
-			const rcon = await Rcon.connect({ host: RCON_HOST, password: RCON_PASSWORD });
+			const rcon = await Rcon.connect({
+				host: RCON_HOST,
+				password: RCON_PASSWORD
+			});
 			client.on("messageCreate", async (message) => {
 				if (message.author.bot || !message.content || message.content.startsWith(PREFIX)) {
 					const args = message.content.slice(PREFIX.length).trim().split(/ +/);
@@ -178,7 +184,7 @@ client.on("ready", async (client) => {
 
 				if (message.author.bot || !message.content || message.channel.id !== GAME_CHAT_CHANNEL || ServerStopped) return;
 
-				const message_parts = splitToSubstrings(message.content, 1024);
+				const message_parts = splitToSubstrings(message.content, "\n", 1024);
 
 				const tellraw_parts = parseMessageParts(message as Message, message_parts);
 
@@ -190,7 +196,7 @@ client.on("ready", async (client) => {
 				if (oldMessage.content === newMessage.content) return;
 				if (newMessage.partial) await newMessage.fetch();
 				if (newMessage.author?.bot || !newMessage.content || newMessage.channel.id !== GAME_CHAT_CHANNEL || ServerStopped) return;
-				const message_parts = splitToSubstrings(newMessage.content, 1024);
+				const message_parts = splitToSubstrings(newMessage.content, "\n", 1024);
 
 				const tellraw_parts = parseMessageParts(newMessage as Message, message_parts);
 
@@ -200,14 +206,14 @@ client.on("ready", async (client) => {
 			});
 			ptyProcess.on("data", function (data) {
 				var FilteredData = data.toString();
-				const DataType = InfoLengthRegexes.chat_regex.test(FilteredData) ? "chat" : InfoLengthRegexes.info_regex.test(FilteredData) ? "info" : null;
+				const DataType = InfoLengthRegExps.chat_regex.test(FilteredData) ? "chat" : InfoLengthRegExps.info_regex.test(FilteredData) ? "info" : null;
 				if (DataType === null) {
 					return;
 				}
 				const DataInfoLength =
 					(DataType === "chat"
-						? FilteredData.match(InfoLengthRegexes.chat_regex)?.[0]!.length
-						: FilteredData.match(InfoLengthRegexes.info_regex)?.[0]!.length) ?? 0;
+						? FilteredData.match(InfoLengthRegExps.chat_regex)?.[0]!.length
+						: FilteredData.match(InfoLengthRegExps.info_regex)?.[0]!.length) ?? 0;
 
 				if (FilteredData.slice(DataInfoLength).charAt(0) == "<" && FilteredData.includes(">")) {
 					FilteredData = FilteredData.split("\n").join(" ");
@@ -216,16 +222,16 @@ client.on("ready", async (client) => {
 					SendData(webhook, FilteredData);
 					return;
 				}
-				if (InfoLengthRegexes.join_regex.test(FilteredData) && !FilteredData.includes("tellraw")) {
+				if (InfoLengthRegExps.join_regex.test(FilteredData) && !FilteredData.includes("tellraw")) {
 					FilteredData = FilteredData.split("\n").join(" ");
-					FilteredData = FilteredData.match(InfoLengthRegexes.join_regex)?.[1] ?? FilteredData;
+					FilteredData = FilteredData.match(InfoLengthRegExps.join_regex)?.[1] ?? FilteredData;
 					SendData(webhook, FilteredData);
 					return;
 				}
 
-				if (InfoLengthRegexes.leave_regex.test(FilteredData) && !FilteredData.includes("tellraw")) {
+				if (InfoLengthRegExps.leave_regex.test(FilteredData) && !FilteredData.includes("tellraw")) {
 					FilteredData = FilteredData.split("\n").join(" ");
-					FilteredData = FilteredData.match(InfoLengthRegexes.leave_regex)?.[1] ?? FilteredData;
+					FilteredData = FilteredData.match(InfoLengthRegExps.leave_regex)?.[1] ?? FilteredData;
 					SendData(webhook, FilteredData);
 					return;
 				}
@@ -235,16 +241,16 @@ client.on("ready", async (client) => {
 					SendData(webhook, "The server is stopping");
 					return;
 				}
-				if (InfoLengthRegexes.goal_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
-					SendData(webhook, "<" + FilteredData.match(InfoLengthRegexes.goal_regex)![1]!.replace("[", "**").replace("]", "**"));
+				if (InfoLengthRegExps.goal_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
+					SendData(webhook, "<" + FilteredData.match(InfoLengthRegExps.goal_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
-				if (InfoLengthRegexes.challenge_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
-					SendData(webhook, "<" + FilteredData.match(InfoLengthRegexes.challenge_regex)![1]!.replace("[", "**").replace("]", "**"));
+				if (InfoLengthRegExps.challenge_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
+					SendData(webhook, "<" + FilteredData.match(InfoLengthRegExps.challenge_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
-				if (InfoLengthRegexes.advancement_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
-					SendData(webhook, "<" + FilteredData.match(InfoLengthRegexes.advancement_regex)![1]!.replace("[", "**").replace("]", "**"));
+				if (InfoLengthRegExps.advancement_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
+					SendData(webhook, "<" + FilteredData.match(InfoLengthRegExps.advancement_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
 				for (const regex of regexes) {
@@ -281,7 +287,10 @@ function parseMessageParts(message: Message, messages: string[]) {
 				part_tellraw.push({
 					text: "[" + (member.nickname !== null ? member.nickname : member.user.username) + "]",
 					color: "#" + decimalToHex(member.roles.highest.color),
-					hoverEvent: { action: "show_text", contents: [`${member.user.username}#${member.user.discriminator}\nID: ${member.user.id}`] }
+					hoverEvent: {
+						action: "show_text",
+						contents: [`${member.user.username}#${member.user.discriminator}\nID: ${member.user.id}`]
+					}
 				});
 			} else if (/<@&(\d{17,19})>/.test(part)) {
 				const role = message.mentions.roles.find((role) => role.id === part.match(/<@&(\d{17,19})>/)![1])!;
@@ -295,33 +304,51 @@ function parseMessageParts(message: Message, messages: string[]) {
 				part_tellraw.push({
 					text: channel.name,
 					color: "green",
-					hoverEvent: { action: "show_text", contents: ["Click me to open channel in discord"] },
-					clickEvent: { action: "open_url", value: `https://discord.com/channels/${channel.guildId}/${channel.id}` }
+					hoverEvent: {
+						action: "show_text",
+						contents: ["Click me to open channel in discord"]
+					},
+					clickEvent: {
+						action: "open_url",
+						value: `https://discord.com/channels/${channel.guildId}/${channel.id}`
+					}
 				});
 			} else {
 				if (validURL(part)) {
 					part_tellraw.push({
 						text: part,
 						color: "blue",
-						hoverEvent: { action: "show_text", contents: ["Click me to open link in browser"] },
+						hoverEvent: {
+							action: "show_text",
+							contents: ["Click me to open link in browser"]
+						},
 						clickEvent: { action: "open_url", value: part }
 					});
 				} else {
-					part_tellraw.push({ text: part, color: "white", hoverEvent: { action: "show_text", contents: [""] } });
+					part_tellraw.push({
+						text: part,
+						color: "white",
+						hoverEvent: { action: "show_text", contents: [""] }
+					});
 				}
 			}
 		});
 		return part_tellraw;
 	});
 }
-function splitToSubstrings(str: string, n: number) {
-	const arr = [];
+function splitToSubstrings(str: string, splitCharacter: string, length: number) {
+	const splitted = str.split(splitCharacter);
+	const result: string[] = [];
 
-	for (let index = 0; index < str.length; index += n) {
-		arr.push(str.slice(index, index + n));
+	for (let portion of splitted) {
+		const last = result.length - 1;
+		if (result[last] && (result[last] + portion).length < length) {
+			result[last] = result[last] + splitCharacter + portion;
+		} else {
+			result.push(portion);
+		}
 	}
-
-	return arr;
+	return result;
 }
 async function SendData(webhook: Webhook, FilteredData: string) {
 	if (FilteredData.includes("<")) {
@@ -375,12 +402,12 @@ async function StealSkin(Username: string) {
 
 	return SkinURL;
 }
-type SplitMethod = "seperate" | "infront" | "behind";
-function splitAndKeep(str: string, separator: string, method: SplitMethod = "seperate") {
+type SplitMethod = "separate" | "beginning" | "behind";
+function splitAndKeep(str: string, separator: string, method: SplitMethod = "separate") {
 	let result: string[] = [];
-	if (method == "seperate") {
+	if (method == "separate") {
 		result = str.split(new RegExp(`(${separator})`, "g"));
-	} else if (method == "infront") {
+	} else if (method == "beginning") {
 		result = str.split(new RegExp(`(?=${separator})`, "g"));
 	} else if (method == "behind") {
 		result = str.split(new RegExp(`(.*?${separator})`, "g"));
