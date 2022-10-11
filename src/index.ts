@@ -218,7 +218,7 @@ client.on("ready", async (client) => {
 				if (FilteredData.slice(DataInfoLength).charAt(0) == "<" && FilteredData.includes(">")) {
 					FilteredData = FilteredData.split("\n").join(" ");
 					FilteredData = FilteredData.slice(DataInfoLength);
-					FilteredData = /^<\[.*\]/.test(FilteredData) ? FilteredData.replace(FilteredData.match(/^<(\[.*\])/)?.[0] ?? "", "") : FilteredData;
+					FilteredData = /^<\[.*\]/.test(FilteredData) ? FilteredData.replace(FilteredData.match(/^<(\[.*\])/)?.[0] + " " ?? "", "") : FilteredData;
 
 					SendData(webhook, FilteredData);
 					return;
@@ -353,7 +353,7 @@ function splitToSubstrings(str: string, splitCharacter: string, length: number) 
 }
 async function SendData(webhook: Webhook, FilteredData: string) {
 	if (FilteredData.includes("<")) {
-		let username = FilteredData.split(" ")[0]!;
+		let username = FilteredData.replace(/<|>/g, "").split(" ")[0]!;
 		const embed = new EmbedBuilder()
 			.setThumbnail((await GetPlayerIcon(webhook, username))!)
 			.setAuthor({ name: username })
