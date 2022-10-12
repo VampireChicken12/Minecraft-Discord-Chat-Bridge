@@ -236,7 +236,11 @@ client.on("ready", async (client) => {
 					SendData(webhook, FilteredData);
 					return;
 				}
-
+				if (FilteredData.includes("Starting minecraft server") && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
+					ServerStopped = true;
+					SendData(webhook, "The server is starting");
+					return;
+				}
 				if (FilteredData.includes("Stopping the server") && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
 					ServerStopped = true;
 					SendData(webhook, "The server is stopping");
