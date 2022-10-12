@@ -69,52 +69,17 @@ if (!["paper", "spigot", "vanilla", "purpur"].includes(SERVER_TYPE)) {
 }
 
 function getInfoLength(server_type: ServerTypes) {
-	switch (server_type) {
-		case "spigot": {
-			return {
-				chat_regex: /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i,
-				info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
-				join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
-				leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
-				goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
-				challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
-				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
-			};
-		}
-		case "vanilla": {
-			return {
-				chat_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
-				info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
-				join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
-				leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
-				goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
-				challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
-				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
-			};
-		}
-		case "paper": {
-			return {
-				chat_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
-				info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
-				join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
-				leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
-				goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
-				challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
-				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
-			};
-		}
-		case "purpur": {
-			return {
-				chat_regex: /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i,
-				info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
-				join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
-				leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
-				goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
-				challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
-				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
-			};
-		}
-	}
+	return {
+		chat_regex: ["purpur", "spigot"].includes(server_type)
+			? /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i
+			: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+		info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+		join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
+		leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
+		goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
+		challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
+		advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
+	};
 }
 type ServerTypes = "paper" | "spigot" | "vanilla" | "purpur";
 const InfoLengthRegExps = getInfoLength(SERVER_TYPE);
@@ -237,7 +202,7 @@ client.on("ready", async (client) => {
 					return;
 				}
 				if (FilteredData.includes("Starting minecraft server") && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
-					ServerStopped = true;
+					ServerStopped = false;
 					SendData(webhook, "The server is starting");
 					return;
 				}
