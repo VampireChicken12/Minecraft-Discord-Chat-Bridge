@@ -63,8 +63,8 @@ const config = getEnv();
 const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD, SERVER_TYPE } = getSanitizedEnv(config);
 let ServerStopped = false;
 
-if (!["paper", "spigot", "vanilla", "purpur"].includes(SERVER_TYPE)) {
-	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper' , 'spigot' ,'vanilla', 'purpur'`);
+if (!["paper", "spigot", "vanilla", "purpur", "forge"].includes(SERVER_TYPE)) {
+	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper' , 'spigot' ,'vanilla', 'purpur', 'forge'.`);
 	process.exit();
 }
 
@@ -114,9 +114,20 @@ function getInfoLength(server_type: ServerTypes) {
 				advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
 			};
 		}
+		case "forge": {
+		       return {
+				chat_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: /i,
+				info_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: /i,
+				join_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* joined the game)/i,
+				leave_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* left the game)/i,
+				goal_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* has reached the goal \[.*\])/i,
+				challenge_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* has completed the challenge \[.*\])/i,
+				advancement_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* has made the advancement \[.*\])/i
+			};
+		}
 	}
 }
-type ServerTypes = "paper" | "spigot" | "vanilla" | "purpur";
+type ServerTypes = "paper" | "spigot" | "vanilla" | "purpur" | "forge";
 const InfoLengthRegExps = getInfoLength(SERVER_TYPE);
 const shell = process.platform === "win32" ? "powershell.exe" : "bash";
 
@@ -126,6 +137,7 @@ const ptyProcess = spawn(shell, [], {
 	rows: 40,
 	cwd: process.cwd()
 });
+console.log(`Starting ${shell} with command: ${START_COMMAND}`);
 ptyProcess.write(`${START_COMMAND}\r`);
 
 client.on("ready", async (client) => {
@@ -184,6 +196,8 @@ client.on("ready", async (client) => {
 
 				if (message.author.bot || !message.content || message.channel.id !== GAME_CHAT_CHANNEL || ServerStopped) return;
 
+				console.log(`Processing ${message.content}`);
+
 				const message_parts = splitToSubstrings(message.content, "\n", 1024);
 
 				const tellraw_parts = parseMessageParts(message as Message, message_parts);
@@ -205,6 +219,7 @@ client.on("ready", async (client) => {
 				});
 			});
 			ptyProcess.on("data", function (data) {
+				console.log(`Data from log: ${data}`);
 				var FilteredData = data.toString();
 				const DataType = InfoLengthRegExps.chat_regex.test(FilteredData) ? "chat" : InfoLengthRegExps.info_regex.test(FilteredData) ? "info" : null;
 				if (DataType === null) {
@@ -296,7 +311,7 @@ function parseMessageParts(message: Message, messages: string[]) {
 			} else if (/<@&(\d{17,19})>/.test(part)) {
 				const role = message.mentions.roles.find((role) => role.id === part.match(/<@&(\d{17,19})>/)![1])!;
 				part_tellraw.push({
-					text: "(" + role.name + ")",
+					text: role.name,
 					color: "#" + decimalToHex(role.color),
 					hoverEvent: { action: "show_text", contents: [""] }
 				});
@@ -352,21 +367,17 @@ function splitToSubstrings(str: string, splitCharacter: string, length: number) 
 	return result;
 }
 async function SendData(webhook: Webhook, FilteredData: string) {
+	console.log(`Trying to send data: ${FilteredData}`);
 	if (FilteredData.includes("<")) {
 		let username = FilteredData.replace(/<|>/g, "").split(" ")[0]!;
-		const embed = new EmbedBuilder()
-			.setThumbnail((await GetPlayerIcon(webhook, username))!)
-			.setAuthor({ name: username })
-			.setDescription(FilteredData.slice(username.length + 2));
 		webhook.send({
-			embeds: [embed],
+			content: FilteredData.slice(username.length + 2),
 			username: username,
-			avatarURL: client.user!.avatarURL()!
+			avatarURL: (await GetPlayerIcon(webhook, username))!
 		});
 	} else {
-		const embed = new EmbedBuilder().setAuthor({ name: "Server" }).setThumbnail(client.user!.avatarURL()!).setDescription(FilteredData);
 		webhook.send({
-			embeds: [embed],
+			content: FilteredData,
 			username: "Server",
 			avatarURL: client.user!.avatarURL()!
 		});
