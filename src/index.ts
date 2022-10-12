@@ -115,7 +115,7 @@ function getInfoLength(server_type: ServerTypes) {
 			};
 		}
 		case "forge": {
-		       return {
+			return {
 				chat_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: /i,
 				info_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: /i,
 				join_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* joined the game)/i,
@@ -341,6 +341,15 @@ function parseMessageParts(message: Message, messages: string[]) {
 						clickEvent: { action: "open_url", value: part }
 					});
 				} else {
+					// Grab last element in part_tellraw and append to it if it is normal text
+					if (part_tellraw.length > 0) {
+						var last_message_part = part_tellraw[part_tellraw.length - 1];
+						if (last_message_part.color == "white" && JSON.stringify(last_message_part.hoverEvent) == JSON.stringify({ action: "show_text", contents: [""] })) {
+							last_message_part.text += part;
+							return;
+						}
+					}
+					// If it is not normal text, create a new element
 					part_tellraw.push({
 						text: part,
 						color: "white",
