@@ -18,7 +18,8 @@ const client = new Client({
 		IntentsBitField.Flags.MessageContent,
 		IntentsBitField.Flags.GuildMessageTyping,
 		IntentsBitField.Flags.GuildWebhooks
-	]
+	],
+	allowedMentions: { repliedUser: true, parse: ["roles", "users"] }
 });
 dotenv.config();
 interface ENV {
@@ -129,7 +130,7 @@ client.on("ready", async (client) => {
 								function (err) {
 									if (err) {
 										message.channel.send("I ran into an error when setting the chat channel");
-										return console.log(err);
+										return console.error(err);
 									}
 									logger.log("Written to " + fileName);
 									return message.channel
@@ -240,8 +241,55 @@ client.on("ready", async (client) => {
 	}
 });
 function parseMessageParts(message: Message, messages: string[]) {
-	return messages.map((message_part) => {
-		let part_tellraw = [
+	const repliedMessage = message.reference ? message.channel.messages.cache.get(message.reference?.messageId!) : null;
+
+	const tellraw_parts: any[] = [];
+	messages.forEach((message_part) => {
+		let part_tellraw = [];
+		if (repliedMessage) {
+			const repliedMember = message.guild?.members.cache.get(repliedMessage.author.id);
+			if (repliedMember) {
+				part_tellraw.push(
+					JSON.parse(
+						`{"text":"[${repliedMember?.nickname ? repliedMember?.nickname : repliedMessage.author?.username}] ", "color":  "#${decimalToHex(
+							repliedMember!.roles.highest.color
+						)}","hoverEvent":{"action":"show_text","contents":["${message.author?.username}#${message.author?.discriminator}\\nID: ${
+							message.author?.id
+						}"]}}`
+					)
+				);
+				splitAndKeepParse(repliedMessage, part_tellraw, repliedMessage.content);
+
+				tellraw_parts.push(part_tellraw);
+				part_tellraw = [];
+				part_tellraw.push(
+					JSON.parse(
+						`{"text":"[${message.member?.nickname ? message.member?.nickname : message.author?.username}] ", "color":  "#${decimalToHex(
+							message.member!.roles.highest.color
+						)}","hoverEvent":{"action":"show_text","contents":["${message.author?.username}#${message.author?.discriminator}\\nID: ${
+							message.author?.id
+						}"]}}`
+					)
+				);
+				part_tellraw.push({
+					text: "replied to ",
+					color: "white",
+					hoverEvent: { action: "show_text", contents: [""] }
+				});
+				part_tellraw.push({
+					text: "[" + (repliedMember.nickname !== null ? repliedMember.nickname : repliedMember.user.username) + "]",
+					color: "#" + decimalToHex(repliedMember.roles.highest.color),
+					hoverEvent: {
+						action: "show_text",
+						contents: [`${repliedMember.user.username}#${repliedMember.user.discriminator}\nID: ${repliedMember.user.id}`]
+					}
+				});
+
+				tellraw_parts.push(part_tellraw);
+				part_tellraw = [];
+			}
+		}
+		part_tellraw.push(
 			JSON.parse(
 				`{"text":"[${message.member?.nickname ? message.member?.nickname : message.author?.username}] ", "color":  "#${decimalToHex(
 					message.member!.roles.highest.color
@@ -249,62 +297,11 @@ function parseMessageParts(message: Message, messages: string[]) {
 					message.author?.id
 				}"]}}`
 			)
-		];
-		splitAndKeep(message_part, " ").map((part) => {
-			if (/<@!?(\d{17,19})>/.test(part)) {
-				const member = message.mentions.members!.get(part.match(/<@!?(\d{17,19})>/)?.[1] ?? "")!;
-				if (!member) return;
-				part_tellraw.push({
-					text: "[" + (member.nickname !== null ? member.nickname : member.user.username) + "]",
-					color: "#" + decimalToHex(member.roles.highest.color),
-					hoverEvent: {
-						action: "show_text",
-						contents: [`${member.user.username}#${member.user.discriminator}\nID: ${member.user.id}`]
-					}
-				});
-			} else if (/<@&(\d{17,19})>/.test(part)) {
-				const role = message.mentions.roles.find((role) => role.id === part.match(/<@&(\d{17,19})>/)![1])!;
-				part_tellraw.push({
-					text: "(" + role.name + ")",
-					color: "#" + decimalToHex(role.color),
-					hoverEvent: { action: "show_text", contents: [""] }
-				});
-			} else if (/<#(\d{17,19})>/.test(part)) {
-				const channel = message.mentions.channels.find((channel) => channel.id === part.match(/<#(\d{17,19})>/)![1])! as TextChannel;
-				part_tellraw.push({
-					text: channel.name,
-					color: "green",
-					hoverEvent: {
-						action: "show_text",
-						contents: ["Click me to open channel in discord"]
-					},
-					clickEvent: {
-						action: "open_url",
-						value: `https://discord.com/channels/${channel.guildId}/${channel.id}`
-					}
-				});
-			} else {
-				if (validURL(part)) {
-					part_tellraw.push({
-						text: part,
-						color: "blue",
-						hoverEvent: {
-							action: "show_text",
-							contents: ["Click me to open link in browser"]
-						},
-						clickEvent: { action: "open_url", value: part }
-					});
-				} else {
-					part_tellraw.push({
-						text: part,
-						color: "white",
-						hoverEvent: { action: "show_text", contents: [""] }
-					});
-				}
-			}
-		});
-		return part_tellraw;
+		);
+		splitAndKeepParse(message, part_tellraw, message_part);
+		tellraw_parts.push(part_tellraw);
 	});
+	return tellraw_parts;
 }
 function splitToSubstrings(str: string, splitCharacter: string, length: number) {
 	const splitted = str.split(splitCharacter);
@@ -349,7 +346,7 @@ async function GetPlayerIcon(webhook: Webhook, Username: string) {
 			image.crop(8, 8, 8, 8).resize(128, 128, jimp.RESIZE_NEAREST_NEIGHBOR).contain(128, 256).contain(256, 256).write("skin_face.png");
 		})
 		.catch((err) => {
-			console.log(err);
+			console.error(err);
 		});
 
 	return (await webhook.edit({ avatar: "./skin_face.png" })).avatarURL();
@@ -390,6 +387,61 @@ function splitAndKeep(str: string, separator: string, method: SplitMethod = "sep
 		});
 	}
 	return result;
+}
+function splitAndKeepParse(message: Message, part_tellraw: any[], message_part: string) {
+	splitAndKeep(message_part, " ").map((part) => {
+		if (/<@!?(\d{17,19})>/.test(part)) {
+			const member = message.guild!.members.cache!.get(part.match(/<@!?(\d{17,19})>/)?.[1] ?? "")!;
+			if (!member) return;
+			part_tellraw.push({
+				text: "[" + (member.nickname !== null ? member.nickname : member.user.username) + "]",
+				color: "#" + decimalToHex(member.roles.highest.color),
+				hoverEvent: {
+					action: "show_text",
+					contents: [`${member.user.username}#${member.user.discriminator}\nID: ${member.user.id}`]
+				}
+			});
+		} else if (/<@&(\d{17,19})>/.test(part)) {
+			const role = message.guild!.roles.cache.find((role) => role.id === part.match(/<@&(\d{17,19})>/)![1])!;
+			part_tellraw.push({
+				text: "(" + role.name + ")",
+				color: "#" + decimalToHex(role.color),
+				hoverEvent: { action: "show_text", contents: [""] }
+			});
+		} else if (/<#(\d{17,19})>/.test(part)) {
+			const channel = message.guild!.channels.cache.find((channel) => channel.id === part.match(/<#(\d{17,19})>/)![1])! as TextChannel;
+			part_tellraw.push({
+				text: channel.name,
+				color: "green",
+				hoverEvent: {
+					action: "show_text",
+					contents: ["Click me to open channel in discord"]
+				},
+				clickEvent: {
+					action: "open_url",
+					value: `https://discord.com/channels/${channel.guildId}/${channel.id}`
+				}
+			});
+		} else {
+			if (validURL(part)) {
+				part_tellraw.push({
+					text: part,
+					color: "blue",
+					hoverEvent: {
+						action: "show_text",
+						contents: ["Click me to open link in browser"]
+					},
+					clickEvent: { action: "open_url", value: part }
+				});
+			} else {
+				part_tellraw.push({
+					text: part,
+					color: "white",
+					hoverEvent: { action: "show_text", contents: [""] }
+				});
+			}
+		}
+	});
 }
 function decimalToHex(d: number, padding?: number | null) {
 	var hex = Number(d).toString(16);
