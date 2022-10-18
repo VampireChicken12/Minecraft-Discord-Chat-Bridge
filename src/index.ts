@@ -30,6 +30,7 @@ interface ENV {
 	RCON_HOST: string | undefined;
 	RCON_PASSWORD: string | undefined;
 	SERVER_TYPE: string | undefined;
+	MESSAGE_TYPE: string | undefined;
 }
 interface Config {
 	TOKEN: string;
@@ -39,6 +40,7 @@ interface Config {
 	RCON_HOST: string;
 	RCON_PASSWORD: string;
 	SERVER_TYPE: ServerTypes;
+	MESSAGE_TYPE: MessageTypes;
 }
 const getEnv = (): ENV => {
 	return {
@@ -48,7 +50,8 @@ const getEnv = (): ENV => {
 		PREFIX: process.env.PREFIX,
 		RCON_HOST: process.env.RCON_HOST,
 		RCON_PASSWORD: process.env.RCON_PASSWORD,
-		SERVER_TYPE: process.env.SERVER_TYPE
+		SERVER_TYPE: process.env.SERVER_TYPE,
+		MESSAGE_TYPE: process.env.MESSAGE_TYPE
 	};
 };
 const getSanitizedEnv = (env: ENV) => {
@@ -61,14 +64,17 @@ const getSanitizedEnv = (env: ENV) => {
 };
 const config = getEnv();
 
-const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD, SERVER_TYPE } = getSanitizedEnv(config);
+const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD, SERVER_TYPE, MESSAGE_TYPE } = getSanitizedEnv(config);
 let ServerStopped = false;
 
 if (!["paper", "spigot", "vanilla", "purpur", "forge"].includes(SERVER_TYPE)) {
-	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper' , 'spigot' ,'vanilla', 'purpur', 'forge'.`);
+	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper', 'spigot' ,'vanilla', 'purpur', 'forge'.`);
 	process.exit();
 }
-
+if (!["embed", "text"].includes(MESSAGE_TYPE)) {
+	logger.error(`Environment variable MESSAGE_TYPE's value is invalid. Valid values are 'text', 'embed'.`);
+	process.exit();
+}
 function getInfoLength(server_type: ServerTypes) {
 	return {
 		...{
@@ -101,6 +107,7 @@ function getInfoLength(server_type: ServerTypes) {
 			  })
 	};
 }
+type MessageTypes = "embed" | "text";
 type ServerTypes = "paper" | "spigot" | "vanilla" | "purpur" | "forge";
 const InfoLengthRegExps = getInfoLength(SERVER_TYPE);
 const shell = process.platform === "win32" ? "powershell.exe" : "bash";
@@ -348,24 +355,41 @@ function splitToSubstrings(str: string, splitCharacter: string, length: number) 
 }
 async function SendData(webhook: Webhook, FilteredData: string) {
 	console.log(`Trying to send data: ${FilteredData}`);
+
 	if (FilteredData.includes("<")) {
 		let username = FilteredData.replace(/<|>/g, "").split(" ")[0]!;
-		const embed = new EmbedBuilder()
-			.setThumbnail((await GetPlayerIcon(webhook, username))!)
-			.setAuthor({ name: username })
-			.setDescription(FilteredData.slice(username.length + 2));
-		webhook.send({
-			embeds: [embed],
-			username: username,
-			avatarURL: client.user!.avatarURL()!
-		});
+		if (MESSAGE_TYPE === "embed") {
+			const embed = new EmbedBuilder()
+				.setThumbnail((await GetPlayerIcon(webhook, username))!)
+				.setAuthor({ name: username })
+				.setDescription(FilteredData.slice(username.length + 2));
+			webhook.send({
+				embeds: [embed],
+				username: username,
+				avatarURL: client.user!.avatarURL()!
+			});
+		} else {
+			webhook.send({
+				content: FilteredData.slice(username.length + 2),
+				username: username,
+				avatarURL: (await GetPlayerIcon(webhook, username))!
+			});
+		}
 	} else {
-		const embed = new EmbedBuilder().setAuthor({ name: "Server" }).setThumbnail(client.user!.avatarURL()!).setDescription(FilteredData);
-		webhook.send({
-			embeds: [embed],
-			username: "Server",
-			avatarURL: client.user!.avatarURL()!
-		});
+		if (MESSAGE_TYPE === "embed") {
+			const embed = new EmbedBuilder().setAuthor({ name: "Server" }).setThumbnail(client.user!.avatarURL()!).setDescription(FilteredData);
+			webhook.send({
+				embeds: [embed],
+				username: "Server",
+				avatarURL: client.user!.avatarURL()!
+			});
+		} else {
+			webhook.send({
+				content: FilteredData,
+				username: "Server",
+				avatarURL: client.user!.avatarURL()!
+			});
+		}
 	}
 }
 
