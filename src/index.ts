@@ -64,25 +64,44 @@ const config = getEnv();
 const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD, SERVER_TYPE } = getSanitizedEnv(config);
 let ServerStopped = false;
 
-if (!["paper", "spigot", "vanilla", "purpur"].includes(SERVER_TYPE)) {
-	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper' , 'spigot' ,'vanilla', 'purpur'`);
+if (!["paper", "spigot", "vanilla", "purpur", "forge"].includes(SERVER_TYPE)) {
+	logger.error(`Environment variable SERVER_TYPE's value is invalid. Valid values are 'paper' , 'spigot' ,'vanilla', 'purpur', 'forge'.`);
 	process.exit();
 }
 
 function getInfoLength(server_type: ServerTypes) {
 	return {
-		chat_regex: ["purpur", "spigot"].includes(server_type)
-			? /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i
-			: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
-		info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
-		join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
-		leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
-		goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
-		challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
-		advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
+		...{
+			chat_regex: ["purpur", "spigot"].includes(server_type)
+				? /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i
+				: /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i
+		},
+		...(server_type === "forge"
+			? {
+					chat_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: /i,
+					info_regex: /\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: /i,
+					join_regex:
+						/\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* joined the game)/i,
+					leave_regex:
+						/\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* left the game)/i,
+					goal_regex:
+						/\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* has reached the goal \[.*\])/i,
+					challenge_regex:
+						/\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* has completed the challenge \[.*\])/i,
+					advancement_regex:
+						/\[\d{2}\w{3}\d{4} \d{2}:\d{2}:\d{2}\.\d{3}\] \[Server thread\/INFO\] \[net.minecraft.server.dedicated.DedicatedServer\/]: (.* has made the advancement \[.*\])/i
+			  }
+			: {
+					info_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i,
+					join_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* joined the game)/i,
+					leave_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* left the game)/i,
+					goal_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has reached the goal \[.*\])/i,
+					challenge_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has completed the challenge \[.*\])/i,
+					advancement_regex: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: (.* has made the advancement \[.*\])/i
+			  })
 	};
 }
-type ServerTypes = "paper" | "spigot" | "vanilla" | "purpur";
+type ServerTypes = "paper" | "spigot" | "vanilla" | "purpur" | "forge";
 const InfoLengthRegExps = getInfoLength(SERVER_TYPE);
 const shell = process.platform === "win32" ? "powershell.exe" : "bash";
 
@@ -92,6 +111,7 @@ const ptyProcess = spawn(shell, [], {
 	rows: 40,
 	cwd: process.cwd()
 });
+console.log(`Starting ${shell} with command: ${START_COMMAND}`);
 ptyProcess.write(`${START_COMMAND}\r`);
 
 client.on("ready", async (client) => {
@@ -150,6 +170,8 @@ client.on("ready", async (client) => {
 
 				if (message.author.bot || !message.content || message.channel.id !== GAME_CHAT_CHANNEL || ServerStopped) return;
 
+				console.log(`Processing ${message.content}`);
+
 				const message_parts = splitToSubstrings(message.content, "\n", 1024);
 
 				const tellraw_parts = parseMessageParts(message as Message, message_parts);
@@ -171,6 +193,7 @@ client.on("ready", async (client) => {
 				});
 			});
 			ptyProcess.on("data", function (data) {
+				console.log(`Data from log: ${data}`);
 				var FilteredData = data.toString();
 				const DataType = InfoLengthRegExps.chat_regex.test(FilteredData) ? "chat" : InfoLengthRegExps.info_regex.test(FilteredData) ? "info" : null;
 				if (DataType === null) {
@@ -230,6 +253,12 @@ client.on("ready", async (client) => {
 						SendData(webhook, "<" + FilteredData.match(regex)![2] + "> " + FilteredData.match(regex)![3]);
 						break;
 					}
+				}
+				// If we get here, it was probably an unhandled death message
+				if (InfoLengthRegExps.info_regex.test(FilteredData)) {
+					FilteredData = FilteredData.split("\r\n").join("");
+					FilteredData = FilteredData.slice(DataInfoLength);
+					SendData(webhook, FilteredData + " :skull:");
 				}
 				if (ServerStopped && FilteredData.includes("All dimensions are saved")) {
 					setTimeout(() => process.exit(), 2000);
@@ -318,21 +347,17 @@ function splitToSubstrings(str: string, splitCharacter: string, length: number) 
 	return result;
 }
 async function SendData(webhook: Webhook, FilteredData: string) {
+	console.log(`Trying to send data: ${FilteredData}`);
 	if (FilteredData.includes("<")) {
 		let username = FilteredData.replace(/<|>/g, "").split(" ")[0]!;
-		const embed = new EmbedBuilder()
-			.setThumbnail((await GetPlayerIcon(webhook, username))!)
-			.setAuthor({ name: username })
-			.setDescription(FilteredData.slice(username.length + 2));
 		webhook.send({
-			embeds: [embed],
+			content: FilteredData.slice(username.length + 2),
 			username: username,
-			avatarURL: client.user!.avatarURL()!
+			avatarURL: (await GetPlayerIcon(webhook, username))!
 		});
 	} else {
-		const embed = new EmbedBuilder().setAuthor({ name: "Server" }).setThumbnail(client.user!.avatarURL()!).setDescription(FilteredData);
 		webhook.send({
-			embeds: [embed],
+			content: FilteredData,
 			username: "Server",
 			avatarURL: client.user!.avatarURL()!
 		});
@@ -434,6 +459,18 @@ function splitAndKeepParse(message: Message, part_tellraw: any[], message_part: 
 					clickEvent: { action: "open_url", value: part }
 				});
 			} else {
+				// Grab last element in part_tellraw and append to it if it is normal text
+				if (part_tellraw.length > 0) {
+					var last_message_part = part_tellraw[part_tellraw.length - 1];
+					if (
+						last_message_part.color == "white" &&
+						JSON.stringify(last_message_part.hoverEvent) == JSON.stringify({ action: "show_text", contents: [""] })
+					) {
+						last_message_part.text += part;
+						return;
+					}
+				}
+				// If it is not normal text, create a new element
 				part_tellraw.push({
 					text: part,
 					color: "white",
