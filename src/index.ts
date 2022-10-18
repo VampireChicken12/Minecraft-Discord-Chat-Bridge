@@ -73,8 +73,8 @@ function getInfoLength(server_type: ServerTypes) {
 	return {
 		...{
 			chat_regex: ["purpur", "spigot"].includes(server_type)
-				? /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i
-				: /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i
+				? /\[\d{2}:\d{2}:\d{2}\] \[Async Chat Thread - #\d.*\/INFO\]: /i
+				: /\[\d{2}:\d{2}:\d{2}\] \[Server thread\/INFO\]: /i
 		},
 		...(server_type === "forge"
 			? {
