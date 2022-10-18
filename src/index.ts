@@ -265,7 +265,9 @@ client.on("ready", async (client) => {
 				if (InfoLengthRegExps.info_regex.test(FilteredData)) {
 					FilteredData = FilteredData.split("\r\n").join("");
 					FilteredData = FilteredData.slice(DataInfoLength);
-					SendData(webhook, FilteredData + " :skull:");
+					if (!FilteredData.includes("issued server command")) {
+						SendData(webhook, FilteredData + " :skull:");
+					}
 				}
 				if (ServerStopped && FilteredData.includes("All dimensions are saved")) {
 					setTimeout(() => process.exit(), 2000);
