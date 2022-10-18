@@ -350,14 +350,19 @@ async function SendData(webhook: Webhook, FilteredData: string) {
 	console.log(`Trying to send data: ${FilteredData}`);
 	if (FilteredData.includes("<")) {
 		let username = FilteredData.replace(/<|>/g, "").split(" ")[0]!;
+		const embed = new EmbedBuilder()
+			.setThumbnail((await GetPlayerIcon(webhook, username))!)
+			.setAuthor({ name: username })
+			.setDescription(FilteredData.slice(username.length + 2));
 		webhook.send({
-			content: FilteredData.slice(username.length + 2),
+			embeds: [embed],
 			username: username,
-			avatarURL: (await GetPlayerIcon(webhook, username))!
+			avatarURL: client.user!.avatarURL()!
 		});
 	} else {
+		const embed = new EmbedBuilder().setAuthor({ name: "Server" }).setThumbnail(client.user!.avatarURL()!).setDescription(FilteredData);
 		webhook.send({
-			content: FilteredData,
+			embeds: [embed],
 			username: "Server",
 			avatarURL: client.user!.avatarURL()!
 		});
