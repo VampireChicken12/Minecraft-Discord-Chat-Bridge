@@ -31,6 +31,8 @@ interface ENV {
 	RCON_PASSWORD: string | undefined;
 	SERVER_TYPE: string | undefined;
 	MESSAGE_TYPE: string | undefined;
+	LOG_UNMATCHED_MESSAGES: string | undefined;
+	UNMATCHED_LOG_CHANNEL: string | undefined;
 }
 interface Config {
 	TOKEN: string;
@@ -41,6 +43,8 @@ interface Config {
 	RCON_PASSWORD: string;
 	SERVER_TYPE: ServerTypes;
 	MESSAGE_TYPE: MessageTypes;
+	LOG_UNMATCHED_MESSAGES: "true" | "false";
+	UNMATCHED_LOG_CHANNEL: string;
 }
 const getEnv = (): ENV => {
 	return {
@@ -51,7 +55,9 @@ const getEnv = (): ENV => {
 		RCON_HOST: process.env.RCON_HOST,
 		RCON_PASSWORD: process.env.RCON_PASSWORD,
 		SERVER_TYPE: process.env.SERVER_TYPE,
-		MESSAGE_TYPE: process.env.MESSAGE_TYPE
+		MESSAGE_TYPE: process.env.MESSAGE_TYPE,
+		LOG_UNMATCHED_MESSAGES: process.env.LOG_UNMATCHED_MESSAGES,
+		UNMATCHED_LOG_CHANNEL: process.env.UNMATCHED_LOG_CHANNEL
 	};
 };
 const getSanitizedEnv = (env: ENV) => {
@@ -64,7 +70,18 @@ const getSanitizedEnv = (env: ENV) => {
 };
 const config = getEnv();
 
-const { TOKEN, GAME_CHAT_CHANNEL, START_COMMAND, PREFIX, RCON_HOST, RCON_PASSWORD, SERVER_TYPE, MESSAGE_TYPE } = getSanitizedEnv(config);
+const {
+	TOKEN,
+	GAME_CHAT_CHANNEL,
+	START_COMMAND,
+	PREFIX,
+	RCON_HOST,
+	RCON_PASSWORD,
+	SERVER_TYPE,
+	MESSAGE_TYPE,
+	LOG_UNMATCHED_MESSAGES,
+	UNMATCHED_LOG_CHANNEL
+} = getSanitizedEnv(config);
 let ServerStopped = false;
 
 if (!["paper", "spigot", "vanilla", "purpur", "forge"].includes(SERVER_TYPE)) {
@@ -125,17 +142,27 @@ client.on("ready", async (client) => {
 	logger.info(`Logged in as ${client.user.tag}`);
 	const gameChannelExists = client.channels.cache.has(GAME_CHAT_CHANNEL);
 	if (gameChannelExists) {
-		const gameChannel = client.channels.cache.find((channel) => channel.id === GAME_CHAT_CHANNEL)! as TextChannel;
-
-		const webhooks = await gameChannel.fetchWebhooks();
-		if (webhooks.size === 0) {
-			gameChannel.createWebhook({
+		const gameChatChannel = client.channels.cache.find((channel) => channel.id === GAME_CHAT_CHANNEL)! as TextChannel;
+		const unMatchedLogChannel = client.channels.cache.has(UNMATCHED_LOG_CHANNEL)
+			? (client.channels.cache.find((channel) => channel.id === UNMATCHED_LOG_CHANNEL) as TextChannel)
+			: undefined;
+		const gameChatChannelWebhooks = await gameChatChannel?.fetchWebhooks();
+		if (gameChatChannelWebhooks.size === 0) {
+			gameChatChannel.createWebhook({
 				name: "Minecraft Chat Webhook",
 				avatar: client.user.displayAvatarURL({ size: 2048 })
 			});
 		}
-		const webhook = webhooks.find((webhook) => webhook.name === "Minecraft Chat Webhook");
-		if (webhook) {
+		const unMatchedLogChannelWebhooks = await unMatchedLogChannel?.fetchWebhooks();
+		if (unMatchedLogChannel && unMatchedLogChannelWebhooks?.size === 0) {
+			unMatchedLogChannel.createWebhook({
+				name: "Minecraft Unmatched Log Webhook",
+				avatar: client.user.displayAvatarURL({ size: 2048 })
+			});
+		}
+		const unMatchedLogChannelWebhook = unMatchedLogChannelWebhooks?.find((webhook) => webhook.name === "Minecraft Unmatched Log Webhook");
+		const gameChatChannelWebhook = gameChatChannelWebhooks.find((webhook) => webhook.name === "Minecraft Chat Webhook");
+		if (gameChatChannelWebhook) {
 			const rcon = await Rcon.connect({
 				host: RCON_HOST,
 				password: RCON_PASSWORD
@@ -164,7 +191,36 @@ client.on("ready", async (client) => {
 										.send(
 											`Chat channel set to ${
 												message.mentions.channels.first() ? message.mentions.channels.first() : "<#" + args[0] + ">"
-											}\nRestarting bot and server to apply change.`
+											}\nRestarting bot to apply change.`
+										)
+										.then(() => {
+											process.exit();
+										});
+								}
+							);
+						}
+					}
+					if (command === "setunmatchedlogchannel") {
+						const fileName = "./.env";
+						const file = readFileSync(fileName).toString();
+						if (file.match(/UNMATCHED_LOG_CHANNEL=\d{17,19}/gi)) {
+							writeFile(
+								fileName,
+								file.replace(
+									/UNMATCHED_LOG_CHANNEL=\d{17,19}/gi,
+									`UNMATCHED_LOG_CHANNEL=${message.mentions.channels.first() ? message.mentions.channels.first()!.id : args[0]}`
+								),
+								function (err) {
+									if (err) {
+										message.channel.send("I ran into an error when setting the unmatched log channel");
+										return console.error(err);
+									}
+									logger.log("Written to " + fileName);
+									return message.channel
+										.send(
+											`Unmatched log channel set to ${
+												message.mentions.channels.first() ? message.mentions.channels.first() : "<#" + args[0] + ">"
+											}\nRestarting bot to apply change.`
 										)
 										.then(() => {
 											process.exit();
@@ -216,58 +272,56 @@ client.on("ready", async (client) => {
 					FilteredData = FilteredData.slice(DataInfoLength);
 					FilteredData = /^<\[.*\]/.test(FilteredData) ? FilteredData.replace(FilteredData.match(/^<(\[.*\])/)?.[1] + " " ?? "", "") : FilteredData;
 
-					SendData(webhook, FilteredData);
+					SendData(gameChatChannelWebhook, FilteredData);
 					return;
 				}
 				if (InfoLengthRegExps.join_regex.test(FilteredData) && !FilteredData.includes("tellraw")) {
 					FilteredData = FilteredData.split("\n").join(" ");
 					FilteredData = FilteredData.match(InfoLengthRegExps.join_regex)?.[1] ?? FilteredData;
-					SendData(webhook, FilteredData);
+					SendData(gameChatChannelWebhook, FilteredData);
 					return;
 				}
 
 				if (InfoLengthRegExps.leave_regex.test(FilteredData) && !FilteredData.includes("tellraw")) {
 					FilteredData = FilteredData.split("\n").join(" ");
 					FilteredData = FilteredData.match(InfoLengthRegExps.leave_regex)?.[1] ?? FilteredData;
-					SendData(webhook, FilteredData);
+					SendData(gameChatChannelWebhook, FilteredData);
 					return;
 				}
 				if (FilteredData.includes("Starting minecraft server") && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
 					ServerStopped = false;
-					SendData(webhook, "The server is starting");
+					SendData(gameChatChannelWebhook, "The server is starting");
 					return;
 				}
 				if (FilteredData.includes("Stopping the server") && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
 					ServerStopped = true;
-					SendData(webhook, "The server is stopping");
+					SendData(gameChatChannelWebhook, "The server is stopping");
 					return;
 				}
 				if (InfoLengthRegExps.goal_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
-					SendData(webhook, "<" + FilteredData.match(InfoLengthRegExps.goal_regex)![1]!.replace("[", "**").replace("]", "**"));
+					SendData(gameChatChannelWebhook, "<" + FilteredData.match(InfoLengthRegExps.goal_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
 				if (InfoLengthRegExps.challenge_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
-					SendData(webhook, "<" + FilteredData.match(InfoLengthRegExps.challenge_regex)![1]!.replace("[", "**").replace("]", "**"));
+					SendData(gameChatChannelWebhook, "<" + FilteredData.match(InfoLengthRegExps.challenge_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
 				if (InfoLengthRegExps.advancement_regex.test(FilteredData) && !FilteredData.includes("<") && !FilteredData.includes("tellraw")) {
-					SendData(webhook, "<" + FilteredData.match(InfoLengthRegExps.advancement_regex)![1]!.replace("[", "**").replace("]", "**"));
+					SendData(gameChatChannelWebhook, "<" + FilteredData.match(InfoLengthRegExps.advancement_regex)![1]!.replace("[", "**").replace("]", "**"));
 					return;
 				}
 				for (const regex of regexes) {
 					if (regex.test(FilteredData)) {
 						FilteredData = FilteredData.split("\r\n").join("");
-						SendData(webhook, "<" + FilteredData.match(regex)![2] + "> " + FilteredData.match(regex)![3]);
+						SendData(gameChatChannelWebhook, "<" + FilteredData.match(regex)![2] + "> " + FilteredData.match(regex)![3]);
 						break;
 					}
 				}
 				// If we get here, it was probably an unhandled death message
-				if (InfoLengthRegExps.info_regex.test(FilteredData)) {
+				if (InfoLengthRegExps.info_regex.test(FilteredData) && LOG_UNMATCHED_MESSAGES === "true" && unMatchedLogChannelWebhook !== undefined) {
 					FilteredData = FilteredData.split("\r\n").join("");
 					FilteredData = FilteredData.slice(DataInfoLength);
-					if (!FilteredData.includes("issued server command")) {
-						SendData(webhook, FilteredData + " :skull:");
-					}
+					SendData(unMatchedLogChannelWebhook, FilteredData + " :skull:");
 				}
 				if (ServerStopped && FilteredData.includes("All dimensions are saved")) {
 					setTimeout(() => process.exit(), 2000);
