@@ -16,7 +16,7 @@ Channel mentions and links are clickable in the minecraft chat, When hovering ov
 
 - [Git](https://git-scm.com/downloads)
 - [NodeJS 16 or higher](https://nodejs.org/en/download/)
-- [Minecraft 1.19 server or later](https://www.minecraft.net/en-us/download/server)
+- [Minecraft 1.18 server or later](https://www.minecraft.net/en-us/download/server)
 
 The minecraft server must have RCON enabled for this application to work, it uses RCON to send the discord chat messages to minecraft chat.
 
