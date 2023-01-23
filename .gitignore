@@ -4,4 +4,3 @@ node_modules/
 .env
 .env-local
 src/logs/
-skin_face.png
