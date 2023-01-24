@@ -20,7 +20,7 @@ export const logUnmatchedCommand = new Command<"log-unmatched">({
 		),
 	execute: async ({ interaction, message, args }) => {
 		const value = interaction
-			? (interaction.options.get("log").value as string)
+			? (interaction.options.get("log").value as string).toString()
 			: message && args
 			? ["true", "false", "yes", "no"].includes(args[0])
 				? ["true", "yes"].includes(args[0])
@@ -29,6 +29,7 @@ export const logUnmatchedCommand = new Command<"log-unmatched">({
 				: null
 			: null;
 		if (!value) return;
+
 		try {
 			updateEnv("LOG_UNMATCHED_MESSAGES", value);
 			if (message) {

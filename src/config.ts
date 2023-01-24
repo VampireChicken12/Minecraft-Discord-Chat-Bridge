@@ -129,7 +129,6 @@ let config = {
 
 export default config;
 export function updateConfig(newEnvVars: ENV) {
-	console.log(newEnvVars);
 	config = {
 		prefix: newEnvVars.PREFIX,
 		token: newEnvVars.TOKEN,
@@ -145,5 +144,4 @@ export function updateConfig(newEnvVars: ENV) {
 		unmatchedLogChannelId: newEnvVars.UNMATCHED_LOG_CHANNEL,
 		deployCommands: newEnvVars.DEPLOY_COMMANDS
 	};
-	console.log(config);
 }

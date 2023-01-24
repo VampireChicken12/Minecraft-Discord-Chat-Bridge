@@ -55,3 +55,5 @@ process.on("SIGTERM", async () => {
 	bot.client.destroy();
 	process.exit(0);
 });
+// TODO: fix unmatched log messages
+// TODO: fix webhook token issue

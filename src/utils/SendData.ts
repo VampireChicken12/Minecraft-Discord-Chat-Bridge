@@ -27,7 +27,7 @@ export default async function SendData({
 			webhook.send({
 				embeds: [embed] as APIEmbed[],
 				username: username,
-				avatarURL: client.user?.avatarURL() ?? ""
+				avatarURL: client.user?.avatarURL() ?? null
 			});
 		} else {
 			webhook.send({
@@ -40,19 +40,19 @@ export default async function SendData({
 		if (messageType === "embed") {
 			const embed = new EmbedBuilder()
 				.setAuthor({ name: "Server" })
-				.setThumbnail(client.user?.avatarURL() ?? "")
+				.setThumbnail(client.user?.avatarURL() ?? null)
 				.setDescription(FilteredData)
 				.toJSON();
 			webhook.send({
 				embeds: [embed] as APIEmbed[],
 				username: "Server",
-				avatarURL: client.user?.avatarURL() ?? ""
+				avatarURL: client.user?.avatarURL() ?? null
 			});
 		} else {
 			webhook.send({
 				content: FilteredData,
 				username: "Server",
-				avatarURL: client.user?.avatarURL() ?? ""
+				avatarURL: client.user?.avatarURL() ?? null
 			});
 		}
 	}

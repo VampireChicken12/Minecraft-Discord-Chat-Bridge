@@ -31,7 +31,13 @@ export const readyEvent = new Event({
 				  ) as TextChannel)
 				: undefined;
 			const gameChatChannelWebhooks = await gameChatChannel?.fetchWebhooks();
-			if (gameChatChannel && gameChatChannelWebhooks.size === 0) {
+
+			if (
+				gameChatChannel &&
+				gameChatChannelWebhooks?.filter(
+					(w) => w.applicationId === client.user?.id
+				).size === 0
+			) {
 				gameChatChannel.createWebhook({
 					name: "Minecraft Chat Webhook",
 					avatar: client.user.displayAvatarURL({ size: 2048 })
@@ -39,7 +45,12 @@ export const readyEvent = new Event({
 			}
 			const unMatchedLogChannelWebhooks =
 				await unMatchedLogChannel?.fetchWebhooks();
-			if (unMatchedLogChannel && unMatchedLogChannelWebhooks?.size === 0) {
+			if (
+				unMatchedLogChannel &&
+				unMatchedLogChannelWebhooks?.filter(
+					(w) => w.applicationId === client.user?.id
+				).size === 0
+			) {
 				unMatchedLogChannel.createWebhook({
 					name: "Minecraft Unmatched Log Webhook",
 					avatar: client.user.displayAvatarURL({ size: 2048 })

@@ -2,6 +2,7 @@ import { CommandInteractionOptionResolver, InteractionType } from "discord.js";
 
 import { bot } from "..";
 import { Event } from "../structures";
+import { CommandExecute } from "../structures/Command";
 
 export const interactionCreateEvent = new Event({
 	name: "interactionCreate",
@@ -16,6 +17,9 @@ export const interactionCreateEvent = new Event({
 			const subcommandName = (
 				interaction.options as CommandInteractionOptionResolver
 			).getSubcommand(false);
+			console.log(subcommandGroup, subcommandName);
+			console.log(command);
+			console.log(typeof command.execute);
 			if (typeof command.execute === "object") {
 				if (subcommandName) {
 					if (subcommandGroup) {
@@ -31,7 +35,9 @@ export const interactionCreateEvent = new Event({
 							command.execute[subcommandName] &&
 							typeof command.execute[subcommandName] === "function"
 						) {
-							command.execute[subcommandName]({ interaction });
+							(command.execute[subcommandName] as CommandExecute)({
+								interaction
+							});
 						}
 					}
 					return;
