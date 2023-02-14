@@ -44,6 +44,7 @@ export let rcon: Rcon;
 		}, 2000);
 	}
 })();
+
 process
 	.on("unhandledRejection", (reason, p) => {
 		logger.error("Unhandled Rejection at: Promise ", p, " reason: ", reason);
