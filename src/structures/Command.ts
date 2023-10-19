@@ -1,5 +1,5 @@
-import {
-	SlashCommandBuilder,
+import { SlashCommandBuilder } from "@discordjs/builders";
+import type {
 	SlashCommandOptionsOnlyBuilder,
 	SlashCommandSubcommandsOnlyBuilder
 } from "@discordjs/builders";

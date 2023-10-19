@@ -1,11 +1,10 @@
-import {
+import type {
 	BitFieldResolvable,
 	ClientEvents,
 	GatewayIntentsString,
-	IntentsBitField,
-	PermissionResolvable,
-	PermissionsBitField
+	PermissionResolvable
 } from "discord.js";
+import { IntentsBitField, PermissionsBitField } from "discord.js";
 
 interface EventOptions<E extends keyof ClientEvents> {
 	name: E;

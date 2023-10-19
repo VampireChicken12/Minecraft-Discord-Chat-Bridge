@@ -2,7 +2,7 @@ import { CommandInteractionOptionResolver, InteractionType } from "discord.js";
 
 import { bot } from "..";
 import { Event } from "../structures";
-import { CommandExecute } from "../structures/Command";
+import type { CommandExecute, SubCommandsExecute } from "../structures/Command";
 
 export const interactionCreateEvent = new Event({
 	name: "interactionCreate",
@@ -21,26 +21,34 @@ export const interactionCreateEvent = new Event({
 			console.log(command);
 			console.log(typeof command.execute);
 			if (typeof command.execute === "object") {
-				if (subcommandName) {
-					if (subcommandGroup) {
-						if (
-							command.execute[subcommandName][subcommandGroup] &&
-							typeof command.execute[subcommandName][subcommandGroup] ===
-								"function"
-						) {
-							command.execute[subcommandName][subcommandGroup]({ interaction });
-						}
-					} else {
-						if (
-							command.execute[subcommandName] &&
-							typeof command.execute[subcommandName] === "function"
-						) {
-							(command.execute[subcommandName] as CommandExecute)({
-								interaction
-							});
-						}
+				if (subcommandName && subcommandGroup) {
+					if (
+						command.execute[subcommandName] !== undefined &&
+						typeof command.execute[subcommandName] === "object" &&
+						(command.execute[subcommandName] as SubCommandsExecute)[
+							subcommandGroup
+						] !== undefined &&
+						typeof (command.execute[subcommandName] as SubCommandsExecute)[
+							subcommandGroup
+						] === "function"
+					) {
+						(
+							(command.execute[subcommandName] as SubCommandsExecute)[
+								subcommandGroup
+							] as CommandExecute
+						)({
+							interaction
+						});
 					}
-					return;
+				} else if (subcommandName && !subcommandGroup) {
+					if (
+						command.execute[subcommandName] &&
+						typeof command.execute[subcommandName] === "function"
+					) {
+						(command.execute[subcommandName] as CommandExecute)({
+							interaction
+						});
+					}
 				}
 			}
 			if (typeof command.execute === "function") {

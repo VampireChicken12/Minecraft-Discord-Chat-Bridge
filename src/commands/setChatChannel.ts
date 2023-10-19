@@ -39,7 +39,7 @@ export const setChannelCommand = new Command<"set-chat-channel">({
 				});
 			}
 		} catch (err) {
-			if (err) {
+			if (err instanceof Error) {
 				if (message) {
 					message.channel.send(
 						`I ran into an error when setting the chat channel\n${err.message}`

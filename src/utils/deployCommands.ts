@@ -17,7 +17,7 @@ export default async function deployCommands() {
 	const guild = channel
 		? (bot.client.guilds.cache.get(channel.guild.id) as Guild)
 		: null;
-	console.log(bot.client.user?.id, guild.id);
+	console.log(bot.client.user?.id, guild?.id);
 	if (!guild) return;
 	await discordRest
 		.put(

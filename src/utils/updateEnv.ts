@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "fs/promises";
 
 import { logger } from "..";
-import { ENV, updateConfig } from "../config";
+import { type ENV, updateConfig } from "../config";
 
 export default async function updateEnv(
 	env_key: keyof ENV,
@@ -14,21 +14,18 @@ export default async function updateEnv(
 	} = Object.fromEntries(
 		file
 			.split("\n")
+			.filter(Boolean)
 			.map((envLine) => envLine.split("#"))
+			.filter(([keyValuePart]) => keyValuePart !== undefined)
 			.map(([keyValuePart, comment]) => [
-				keyValuePart.split("="),
+				(keyValuePart as string).split("="),
 				comment ? `#${comment}` : ""
-			])
-			.map(([[key, value], comment]: [[string, string], string]) => [
-				key,
-				["true", "false"].includes(value)
-					? [JSON.parse(value), comment]
-					: [value, comment]
 			])
 	);
 
 	if (Object.prototype.hasOwnProperty.call(parsedEnvVars, env_key)) {
-		parsedEnvVars[env_key][0] = env_value;
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+		parsedEnvVars[env_key]![0] = env_value;
 	} else {
 		parsedEnvVars[env_key] = [env_value, ""];
 	}

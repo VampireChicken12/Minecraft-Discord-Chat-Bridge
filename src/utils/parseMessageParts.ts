@@ -1,7 +1,7 @@
 import { Message } from "discord.js";
 
 import { decimalToHex, splitAndKeepParse } from ".";
-import { Part } from "../typings";
+import type { Part } from "../typings";
 
 export default function parseMessageParts(
 	message: Message,

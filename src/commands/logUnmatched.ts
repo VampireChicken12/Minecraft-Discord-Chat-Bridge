@@ -20,8 +20,8 @@ export const logUnmatchedCommand = new Command<"log-unmatched">({
 		),
 	execute: async ({ interaction, message, args }) => {
 		const value = interaction
-			? (interaction.options.get("log").value as string).toString()
-			: message && args
+			? (interaction.options.get("log")?.value as string).toString()
+			: message && args && args[0]
 			? ["true", "false", "yes", "no"].includes(args[0])
 				? ["true", "yes"].includes(args[0])
 					? "true"
@@ -41,7 +41,7 @@ export const logUnmatchedCommand = new Command<"log-unmatched">({
 				});
 			}
 		} catch (err) {
-			if (err) {
+			if (err instanceof Error) {
 				if (message) {
 					message.channel.send(
 						`I ran into an error when setting the log unmatched messages setting\n${err.message}`

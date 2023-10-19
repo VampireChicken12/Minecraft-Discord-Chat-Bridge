@@ -37,7 +37,7 @@ export const setUnmatchedLogChannelCommand = new Command<"set-uml-channel">({
 				});
 			}
 		} catch (err) {
-			if (err) {
+			if (err instanceof Error) {
 				if (message) {
 					message.channel.send(
 						`I ran into an error when setting the unmatched log channel\n${err.message}`

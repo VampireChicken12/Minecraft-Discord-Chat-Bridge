@@ -1,4 +1,4 @@
-import { APIEmbed, Client, EmbedBuilder, Webhook } from "discord.js";
+import { type APIEmbed, Client, EmbedBuilder, Webhook } from "discord.js";
 
 import { logger } from "..";
 import config from "../config";
@@ -27,7 +27,7 @@ export default async function SendData({
 			webhook.send({
 				embeds: [embed] as APIEmbed[],
 				username: username,
-				avatarURL: client.user?.avatarURL() ?? null
+				avatarURL: client.user?.avatarURL() ?? undefined
 			});
 		} else {
 			webhook.send({
@@ -46,13 +46,13 @@ export default async function SendData({
 			webhook.send({
 				embeds: [embed] as APIEmbed[],
 				username: "Server",
-				avatarURL: client.user?.avatarURL() ?? null
+				avatarURL: client.user?.avatarURL() ?? undefined
 			});
 		} else {
 			webhook.send({
 				content: FilteredData,
 				username: "Server",
-				avatarURL: client.user?.avatarURL() ?? null
+				avatarURL: client.user?.avatarURL() ?? undefined
 			});
 		}
 	}

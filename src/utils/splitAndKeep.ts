@@ -1,7 +1,7 @@
 import { Message } from "discord.js";
 
 import { decimalToHex, validURL } from ".";
-import { SplitMethod } from "../typings";
+import type { SplitMethod } from "../typings";
 
 function splitAndKeep(
 	str: string,

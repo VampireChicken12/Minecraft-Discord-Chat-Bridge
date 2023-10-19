@@ -2,7 +2,7 @@ import { Message } from "discord.js";
 
 import { bot } from "..";
 import config from "../config";
-import { CommandExecute } from "../structures";
+import type { CommandExecute } from "../structures";
 
 const { prefix } = config;
 export default function commandHandler(message: Message) {
@@ -12,6 +12,7 @@ export default function commandHandler(message: Message) {
 	const command = bot.commands.get(desiredCommand);
 	if (command === undefined) return;
 	const [subcommand] = args;
+	if (subcommand === undefined) return;
 	if (typeof command.execute === "object") {
 		if (
 			command.execute[subcommand] &&

@@ -2,7 +2,7 @@ import Bourne from "@hapi/bourne";
 import dotenv from "dotenv";
 import JoiBase from "joi";
 
-import { MessageTypes, ServerTypes } from "./typings";
+import type { MessageTypes, ServerTypes } from "./typings";
 
 // Parse arrays and objects
 const Joi: typeof JoiBase = JoiBase.extend(

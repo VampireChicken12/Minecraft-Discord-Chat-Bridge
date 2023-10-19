@@ -1,4 +1,4 @@
-import { ServerTypes } from "../typings";
+import type { ServerTypes } from "../typings";
 
 export default function getInfoLength(server_type: ServerTypes) {
 	return {
